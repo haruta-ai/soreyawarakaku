@@ -57,7 +57,7 @@ h3 { margin: 0; font-size: 17px; }
 .step { height: 4px; flex: 1; background: var(--line); border-radius: 4px; }
 .step.is-done { background: var(--accent); }
 .chip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
-.chip { min-height: 58px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; font-weight: 700; cursor: pointer; }
+.chip { min-height: 62px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; font-size: 18px; font-weight: 800; cursor: pointer; }
 .chip:hover { border-color: var(--accent); }
 .chip.is-selected { color: #fff; background: var(--accent); border-color: var(--accent); box-shadow: 0 6px 15px rgba(47,79,69,.2); }
 .setting-title { margin: 28px 0 0; font-size: 19px; }
