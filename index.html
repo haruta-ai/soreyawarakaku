@@ -1,1 +1,63 @@
-zsh:1: command not found: node
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f3ec">
+  <meta name="description" content="言いにくい本音を、角の立たない大人の言い方へ。端末内だけで使える言い換えアプリ。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="やわらかく">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>それ、やわらかく</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">本文へ移動</a>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <button id="backButton" class="icon-button" type="button" aria-label="前の画面に戻る" hidden>‹</button>
+      <button id="brandButton" class="brand-button" type="button" aria-label="ホームへ戻る">
+        <span class="brand-mark" aria-hidden="true">や</span>
+        <span>それ、やわらかく</span>
+      </button>
+      <button id="menuButton" class="icon-button menu-button" type="button" aria-label="メニューを開く" aria-expanded="false"><span aria-hidden="true">•••</span></button>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <noscript><p class="notice">このアプリを使うにはJavaScriptを有効にしてください。</p></noscript>
+      <section id="screen" class="screen" aria-live="polite"></section>
+    </main>
+
+    <nav id="bottomNav" class="bottom-nav" aria-label="メインメニュー">
+      <button type="button" data-nav="home" class="is-active"><span aria-hidden="true">⌂</span>ホーム</button>
+      <button type="button" data-nav="search"><span aria-hidden="true">⌕</span>検索</button>
+      <button type="button" data-nav="favorites"><span aria-hidden="true">♡</span>お気に入り</button>
+      <button type="button" data-nav="history"><span aria-hidden="true">↺</span>履歴</button>
+    </nav>
+  </div>
+
+  <dialog id="introDialog" class="dialog">
+    <button class="dialog-close" type="button" data-close-dialog aria-label="説明を閉じる">×</button>
+    <p class="eyebrow">はじめまして</p>
+    <h1>角は取っても、<br>言いたいことは残します。</h1>
+    <p>本音を選んで、相手とトーンを決めるだけ。文章は外に送らず、この端末だけで動きます。</p>
+    <button id="startButton" class="primary-button" type="button">さっそく使う</button>
+    <button class="text-button" type="button" data-close-dialog>説明をスキップ</button>
+  </dialog>
+
+  <dialog id="menuDialog" class="dialog menu-dialog">
+    <button class="dialog-close" type="button" data-close-dialog aria-label="メニューを閉じる">×</button>
+    <h2>このアプリについて</h2>
+    <p>外部API・ログイン・通信なし。お気に入りと履歴は、この端末だけに保存されます。</p>
+    <button id="installButton" class="secondary-button" type="button" hidden>ホーム画面に追加</button>
+    <button id="showIntroButton" class="secondary-button" type="button">使い方を見る</button>
+    <button id="clearDataButton" class="danger-button" type="button">保存データを消去</button>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
