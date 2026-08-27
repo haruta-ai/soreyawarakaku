@@ -23,7 +23,6 @@
     audience: null,
     tone: null,
     query: "",
-    showAllCategories: false,
     saved: loadSaved()
   };
 
@@ -88,11 +87,9 @@
 
   function renderHome() {
     const recent = state.saved.history.slice(0, 2);
-    const categories = state.showAllCategories ? DATA.categories : DATA.categories.slice(0, 6);
     return `<div class="hero"><p class="eyebrow">言いにくいを、言いやすく。</p><h1>本音の角を、<br>すこし丸く。</h1><p class="lead">言いたいことを選ぶだけ。大人の言い方を、すぐ3つ。</p></div>
-      <div class="section-heading"><h2>まず、場面を選ぶ</h2><span>タップで次へ</span></div>
-      <div class="category-grid">${categories.map(categoryCard).join("")}</div>
-      ${state.showAllCategories ? "" : `<button class="show-more-button" type="button" data-show-all>ほかの場面も見る <span aria-hidden="true">↓</span></button>`}
+      <div class="section-heading"><h2>どんな場面ですか？</h2><span>${DATA.items.length * Object.keys(DATA.tones).length * Object.keys(DATA.audiences).length}通り</span></div>
+      <div class="category-grid">${DATA.categories.map(categoryCard).join("")}</div>
       ${recent.length ? `<div class="section-heading"><h2>最近使った言い方</h2></div><div class="list">${recent.map(savedCard).join("")}</div>` : ""}`;
   }
 
@@ -115,8 +112,7 @@
   }
 
   function renderTone() {
-    const toneName = { soft: "ふんわり", polite: "きちんと", firm: "はっきり" };
-    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip ${toneName[id] ? "chip-primary" : ""}" type="button" data-tone="${id}"><strong>${escapeHtml(toneName[id] || tone.label)}</strong>${toneName[id] ? `<small>${escapeHtml(tone.label)}</small>` : ""}</button>`).join("")}</div>`;
+    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip" type="button" data-tone="${id}">${escapeHtml(tone.label)}</button>`).join("")}</div>`;
   }
 
   function getResults(item, audienceId, toneId) {
@@ -196,7 +192,6 @@
 
   function bindScreenEvents() {
     screen.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => navigate("category", { category: button.dataset.category })));
-    screen.querySelectorAll("[data-show-all]").forEach(button => button.addEventListener("click", () => { state.showAllCategories = true; render(); }));
     screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)) })));
     screen.querySelectorAll("[data-audience]").forEach(button => button.addEventListener("click", () => navigate("tone", { audience: button.dataset.audience })));
     screen.querySelectorAll("[data-tone]").forEach(button => button.addEventListener("click", () => navigate("result", { tone: button.dataset.tone })));
