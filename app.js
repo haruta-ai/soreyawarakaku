@@ -1,25 +1,257 @@
-(()=>{'use strict';
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const KEY='yawarakaku-v1'; const defaults={favorites:[],recent:[]};
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));return x&&Array.isArray(x.favorites)&&Array.isArray(x.recent)?x:{...defaults}}catch{return {...defaults}}}
-let saved=load(), selected=null, category='all', audience='同僚', tone='soft', activeTab='favorites', deferredInstall;
-const audiences=['上司','同僚','部下','取引先','友達','家族・恋人'];
-const tones=[['soft','やわらかく','角を丸く'],['polite','丁寧に','きちんと敬語'],['firm','しっかり','本音は明確に']];
-const view=name=>{['home','builder','results','library'].forEach(v=>$('#'+v+'-view').hidden=v!==name);$$('[data-nav]').forEach(a=>a.toggleAttribute('aria-current',a.dataset.nav===name));scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});$('#main').focus({preventScroll:true})};
-const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch{toast('保存できませんでした')};updateCounts()};
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t.timer);t.timer=setTimeout(()=>t.classList.remove('show'),1800)}
-function renderCategories(){$('#quick-row').innerHTML=CATEGORIES.map(c=>`<button type="button" data-cat="${c[0]}" aria-pressed="${category===c[0]}">${c[1]}</button>`).join('')}
-function renderPhrases(){const q=$('#search').value.trim().toLowerCase();const rows=PHRASES.filter(p=>(category==='all'||p.category===category)&&(!q||[p.raw,p.categoryLabel,p.soft,p.polite,p.firm].join(' ').toLowerCase().includes(q)));$('#result-count').textContent=`${rows.length}件`;$('#phrase-list').innerHTML=rows.map(p=>`<button class="phrase" type="button" data-id="${p.id}"><span><small>${p.categoryLabel}</small>${p.raw}</span><b aria-hidden="true">→</b></button>`).join('');$('#search-empty').hidden=rows.length>0}
-function choose(p){selected=p;makeResults()}
-function renderChoices(){$('#audience-choices').innerHTML=audiences.map(a=>`<button type="button" data-audience="${a}" aria-pressed="${a===audience}">${a}</button>`).join('');$('#tone-choices').innerHTML=tones.map(t=>`<button type="button" data-tone="${t[0]}" aria-pressed="${t[0]===tone}"><strong>${t[1]}</strong><small>${t[2]}</small></button>`).join('')}
-function adjusted(text){if(audience==='上司'||audience==='取引先')return text;if(audience==='友達'||audience==='家族・恋人')return text.replace(/いただけますか/g,'もらえる？').replace(/お願いします/g,'お願い').replace(/申し訳ありません/g,'ごめんね');return text}
-function makeResults(){const order=tone==='soft'?['soft','polite','firm']:tone==='polite'?['polite','soft','firm']:['firm','polite','soft'];const labels={soft:'ふんわり',polite:'きちんと',firm:'はっきり'};$('#result-context').textContent=`${audience}へ・${tones.find(t=>t[0]===tone)[1]}`;$('#result-cards').innerHTML=order.map((k,i)=>{const text=adjusted(selected[k],i);return `<article class="result-card"><div><span>0${i+1}</span><small>${labels[k]}</small></div><p>${text}</p><div class="result-actions"><button type="button" data-copy="${encodeURIComponent(text)}">コピー</button><button class="heart" type="button" data-fav="${encodeURIComponent(text)}" aria-label="お気に入りに追加" aria-pressed="${saved.favorites.some(x=>x.text===text)}">♡</button></div></article>`}).join('');saved.recent=[{raw:selected.raw,audience,tone,date:Date.now()},...saved.recent.filter(x=>x.raw!==selected.raw)].slice(0,20);persist();view('results');location.hash='results'}
-function copy(text){const done=()=>toast('コピーしました。あとは送るだけ。');if(navigator.clipboard&&isSecureContext)navigator.clipboard.writeText(text).then(done).catch(()=>fallback());else fallback();function fallback(){const t=document.createElement('textarea');t.value=text;t.style.position='fixed';t.style.opacity='0';document.body.append(t);t.select();try{document.execCommand('copy');done()}catch{toast('長押ししてコピーしてください')}t.remove()}}
-function toggleFav(text,button){const i=saved.favorites.findIndex(x=>x.text===text);if(i>=0){saved.favorites.splice(i,1);button?.setAttribute('aria-pressed','false');toast('お気に入りから外しました')}else{saved.favorites.unshift({text,raw:selected?.raw||'',date:Date.now()});button?.setAttribute('aria-pressed','true');toast('お気に入りに保存しました')}persist()}
-function updateCounts(){$('#fav-count').textContent=saved.favorites.length;$('#recent-count').textContent=saved.recent.length}
-function renderLibrary(){const items=saved[activeTab];$('#library-list').innerHTML=items.length?items.map((x,i)=>activeTab==='favorites'?`<article class="saved-card"><small>${x.raw?'「'+x.raw+'」から':''}</small><p>${x.text}</p><div><button data-copy="${encodeURIComponent(x.text)}">コピー</button><button data-remove="${i}" aria-label="お気に入りから削除">削除</button></div></article>`:`<button class="recent-card" data-recent="${i}"><small>${x.audience}へ</small><strong>${x.raw}</strong><span>もう一度 →</span></button>`).join(''):`<div class="empty"><span>${activeTab==='favorites'?'♡':'○'}</span><h2>${activeTab==='favorites'?'まだ保存はありません':'履歴はまだありません'}</h2><p>使った言葉が、ここにそっと残ります。</p></div>`;updateCounts()}
-document.addEventListener('click',e=>{const b=e.target.closest('button,a');if(!b)return;if(b.dataset.cat!==undefined){category=b.dataset.cat;renderCategories();renderPhrases()}if(b.dataset.id)choose(PHRASES.find(p=>p.id===b.dataset.id));if(b.dataset.audience){audience=b.dataset.audience;renderChoices()}if(b.dataset.tone){tone=b.dataset.tone;renderChoices()}if(b.id==='make-button')makeResults();if(b.dataset.copy)copy(decodeURIComponent(b.dataset.copy));if(b.dataset.fav)toggleFav(decodeURIComponent(b.dataset.fav),b);if(b.dataset.back!==undefined){view('home');location.hash='home'}if(b.dataset.backToBuilder!==undefined){$('#builder-title').textContent='「'+selected.raw+'」';renderChoices();view('builder');location.hash='make'}if(b.id==='restart-button'){view('home');location.hash='home'}if(b.dataset.nav==='home')view('home');if(b.dataset.nav==='library'){renderLibrary();view('library')}if(b.dataset.tab){activeTab=b.dataset.tab;$$('[role=tab]').forEach(t=>t.setAttribute('aria-selected',t===b));renderLibrary()}if(b.dataset.remove!==undefined){saved.favorites.splice(+b.dataset.remove,1);persist();renderLibrary()}if(b.dataset.recent!==undefined){const x=saved.recent[+b.dataset.recent];selected=PHRASES.find(p=>p.raw===x.raw);if(selected){audience=x.audience;tone=x.tone;choose(selected)}}if(b.id==='clear-history'&&saved.recent.length){saved.recent=[];persist();renderLibrary();toast('履歴を消去しました')}if(b.id==='install-button'&&deferredInstall){deferredInstall.prompt();deferredInstall=null;b.hidden=true}});
-$('#search').addEventListener('input',renderPhrases);window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;$('#install-button').hidden=false});
-window.addEventListener('hashchange',()=>{if(location.hash==='#library'){renderLibrary();view('library')}else if(!['#make','#results'].includes(location.hash))view('home')});
-renderCategories();renderPhrases();updateCounts();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));if(location.hash==='#library'){renderLibrary();view('library')}else if(['#make','#results'].includes(location.hash)){history.replaceState(null,'','#home');view('home')}
-})();
+/* それ、やわらかく。— 依存ライブラリなしの画面制御 */
+(function () {
+  "use strict";
+
+  const DATA = window.YAWARAKA_DATA;
+  const screen = document.getElementById("screen");
+  const backButton = document.getElementById("backButton");
+  const menuButton = document.getElementById("menuButton");
+  const brandButton = document.getElementById("brandButton");
+  const bottomNav = document.getElementById("bottomNav");
+  const toast = document.getElementById("toast");
+  const introDialog = document.getElementById("introDialog");
+  const menuDialog = document.getElementById("menuDialog");
+  const installButton = document.getElementById("installButton");
+  const STORAGE_KEY = "yawarakaku.v1";
+  let deferredInstallPrompt = null;
+  let toastTimer = null;
+
+  const state = {
+    view: "home",
+    category: null,
+    item: null,
+    audience: null,
+    tone: null,
+    query: "",
+    showAllCategories: false,
+    saved: loadSaved()
+  };
+
+  function loadSaved() {
+    const empty = { favorites: [], history: [], introSeen: false };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (!parsed || !Array.isArray(parsed.favorites) || !Array.isArray(parsed.history)) return empty;
+      return { favorites: parsed.favorites.slice(0, 100), history: parsed.history.slice(0, 30), introSeen: Boolean(parsed.introSeen) };
+    } catch (error) {
+      localStorage.removeItem(STORAGE_KEY);
+      return empty;
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.saved));
+      return true;
+    } catch (error) {
+      showToast("端末に保存できませんでした。空き容量をご確認ください");
+      return false;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+  }
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2200);
+  }
+
+  function showDialog(dialog) {
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+  }
+
+  function closeDialog(dialog) {
+    if (typeof dialog.close === "function") dialog.close();
+    else dialog.removeAttribute("open");
+  }
+
+  function navigate(view, options) {
+    state.view = view;
+    Object.assign(state, options || {});
+    render();
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => document.getElementById("main").focus({ preventScroll: true }));
+  }
+
+  function render() {
+    const renderers = { home: renderHome, category: renderCategory, audience: renderAudience, tone: renderTone, result: renderResult, search: renderSearch, favorites: renderFavorites, history: renderHistory };
+    screen.innerHTML = (renderers[state.view] || renderHome)();
+    backButton.hidden = ["home", "search", "favorites", "history"].includes(state.view);
+    bottomNav.querySelectorAll("button").forEach(button => button.classList.toggle("is-active", button.dataset.nav === state.view || (button.dataset.nav === "home" && !["search", "favorites", "history"].includes(state.view))));
+    bindScreenEvents();
+  }
+
+  function renderHome() {
+    const recent = state.saved.history.slice(0, 2);
+    const categories = state.showAllCategories ? DATA.categories : DATA.categories.slice(0, 6);
+    return `<div class="hero"><p class="eyebrow">言いにくいを、言いやすく。</p><h1>本音の角を、<br>すこし丸く。</h1><p class="lead">言いたいことを選ぶだけ。大人の言い方を、すぐ3つ。</p></div>
+      <div class="section-heading"><h2>まず、場面を選ぶ</h2><span>タップで次へ</span></div>
+      <div class="category-grid">${categories.map(categoryCard).join("")}</div>
+      ${state.showAllCategories ? "" : `<button class="show-more-button" type="button" data-show-all>ほかの場面も見る <span aria-hidden="true">↓</span></button>`}
+      ${recent.length ? `<div class="section-heading"><h2>最近使った言い方</h2></div><div class="list">${recent.map(savedCard).join("")}</div>` : ""}`;
+  }
+
+  function categoryCard(category) {
+    return `<button class="choice-card" type="button" data-category="${category.id}" aria-label="${escapeHtml(category.label)}。${escapeHtml(category.description)}"><span class="choice-icon" aria-hidden="true">${category.icon}</span><span>${escapeHtml(category.label)}</span></button>`;
+  }
+
+  function steps(current) {
+    return `<div class="steps" aria-label="4ステップ中${current}ステップ目">${[1,2,3,4].map(n => `<span class="step ${n <= current ? "is-done" : ""}"></span>`).join("")}</div>`;
+  }
+
+  function renderCategory() {
+    const category = DATA.categories.find(c => c.id === state.category);
+    const items = DATA.items.filter(item => item.category === state.category);
+    return `${steps(1)}<p class="eyebrow">STEP 1</p><h1>${escapeHtml(category.label)}</h1><p class="lead">いちばん近い本音を選んでください。</p><div class="list" style="margin-top:22px">${items.map(item => `<button class="phrase-card" type="button" data-item="${item.id}"><span>「${escapeHtml(item.honest)}」</span><span class="chevron" aria-hidden="true">›</span></button>`).join("")}</div>`;
+  }
+
+  function renderAudience() {
+    return `${steps(2)}<p class="eyebrow">STEP 2</p><h1>誰に伝えますか？</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip" type="button" data-audience="${id}">${escapeHtml(audience.label)}</button>`).join("")}</div>`;
+  }
+
+  function renderTone() {
+    const toneName = { soft: "ふんわり", polite: "きちんと", firm: "はっきり" };
+    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip ${toneName[id] ? "chip-primary" : ""}" type="button" data-tone="${id}"><strong>${escapeHtml(toneName[id] || tone.label)}</strong>${toneName[id] ? `<small>${escapeHtml(tone.label)}</small>` : ""}</button>`).join("")}</div>`;
+  }
+
+  function getResults(item, audienceId, toneId) {
+    const raw = item.variants[toneId];
+    const tone = DATA.tones[toneId];
+    const audience = DATA.audiences[audienceId];
+    return raw.map((text, index) => {
+      let result = text.replace("{lead}", tone.lead[index]).replace("{suffix}", audience.suffix);
+      if ((audienceId === "client" || audienceId === "boss") && toneId === "soft" && index === 2) result += ` ${audience.suffix}`;
+      return result;
+    });
+  }
+
+  function renderResult() {
+    const results = getResults(state.item, state.audience, state.tone);
+    addHistory(results[0]);
+    return `${steps(4)}<div class="result-intro"><p class="eyebrow">できました</p><h1>角は取れました。<br>要点は残っています。</h1><div class="honest-box"><small>本音</small><p>「${escapeHtml(state.item.honest)}」</p></div><h2>大人の言い方</h2><p class="lead">${escapeHtml(DATA.audiences[state.audience].label)}へ・${escapeHtml(DATA.tones[state.tone].label)}</p></div><div class="result-list">${results.map((text, index) => resultCard(text, index)).join("")}</div><button class="secondary-button" type="button" data-restart>別の言い方を探す</button>`;
+  }
+
+  function resultCard(text, index) {
+    const key = favoriteKey(text);
+    const active = state.saved.favorites.some(item => item.key === key);
+    return `<article class="result-card"><small>案 ${index + 1}</small><p>${escapeHtml(text)}</p><button class="favorite-button" type="button" data-favorite="${index}" aria-label="お気に入り${active ? "から削除" : "に追加"}" aria-pressed="${active}">${active ? "♥" : "♡"}</button><button class="copy-button" type="button" data-copy="${index}">この言い方をコピー</button></article>`;
+  }
+
+  function renderSearch() {
+    const query = state.query.trim().toLowerCase();
+    const matches = query ? DATA.items.filter(item => item.honest.toLowerCase().includes(query) || (DATA.categories.find(c => c.id === item.category) || {}).label.includes(query)) : DATA.items;
+    return `<p class="eyebrow">すぐ見つける</p><h1>本音から検索</h1><div class="search-box"><input id="searchInput" type="search" value="${escapeHtml(state.query)}" placeholder="例：無理、遅れ、片づけ" aria-label="本音を検索" enterkeyhint="search"></div><div id="searchResults" class="list">${renderSearchResults(matches, query)}</div>`;
+  }
+
+  function renderSearchResults(matches, query) {
+    if (!matches.length) return `<div class="empty"><span class="empty-mark" aria-hidden="true">…</span><h2>ぴったりの本音がありません</h2><p>言葉が少し遠出中です。短い言葉で探してみてください。</p></div>`;
+    return matches.map(item => { const category = DATA.categories.find(c => c.id === item.category); return `<button class="phrase-card" type="button" data-search-item="${item.id}"><span><small class="saved-meta">${escapeHtml(category.label)}</small><br>「${escapeHtml(item.honest)}」</span><span class="chevron" aria-hidden="true">›</span></button>`; }).join("");
+  }
+
+  function renderFavorites() {
+    return `<p class="eyebrow">また使える</p><h1>お気に入り</h1>${state.saved.favorites.length ? `<div class="list">${state.saved.favorites.map(savedCard).join("")}</div>` : emptyState("♡", "まだ、まっさらです", "気に入った言い方の♡を押すと、ここに並びます。")}`;
+  }
+
+  function renderHistory() {
+    return `<p class="eyebrow">振り返る</p><h1>最近使った履歴</h1>${state.saved.history.length ? `<div class="list">${state.saved.history.map(savedCard).join("")}</div>` : emptyState("↺", "まだ履歴はありません", "最初のひと言を選ぶところから、どうぞ。")}`;
+  }
+
+  function emptyState(mark, title, body) { return `<div class="empty"><span class="empty-mark" aria-hidden="true">${mark}</span><h2>${title}</h2><p>${body}</p><button class="secondary-button" type="button" data-go-home>言い換えを始める</button></div>`; }
+
+  function savedCard(item) {
+    return `<article class="saved-card"><p>${escapeHtml(item.text)}</p><div class="saved-meta">${escapeHtml(item.meta || "保存した言い方")}</div><div class="saved-actions"><button type="button" data-copy-saved="${escapeHtml(item.key)}">コピー</button>${state.view === "favorites" ? `<button type="button" data-remove-favorite="${escapeHtml(item.key)}">削除</button>` : ""}</div></article>`;
+  }
+
+  function favoriteKey(text) { return hashString(text); }
+  function hashString(text) { let hash = 0; for (let i = 0; i < text.length; i += 1) hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0; return String(hash); }
+
+  function savedRecord(text) {
+    return { key: favoriteKey(text), text, meta: `${DATA.audiences[state.audience].label}へ・${DATA.tones[state.tone].label}`, at: Date.now() };
+  }
+
+  function addHistory(text) {
+    const record = savedRecord(text);
+    state.saved.history = [record, ...state.saved.history.filter(item => item.key !== record.key)].slice(0, 30);
+    save();
+  }
+
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+      else {
+        const area = document.createElement("textarea");
+        area.value = text; area.setAttribute("readonly", ""); area.style.position = "fixed"; area.style.opacity = "0";
+        document.body.appendChild(area); area.select();
+        if (!document.execCommand("copy")) throw new Error("copy failed");
+        area.remove();
+      }
+      showToast(["角を丸めて、コピーしました", "言葉の身だしなみ、整いました", "そのひと言、いい感じです"][Math.floor(Math.random() * 3)]);
+    } catch (error) { showToast("コピーできませんでした。長押しで選択してください"); }
+  }
+
+  function bindScreenEvents() {
+    screen.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => navigate("category", { category: button.dataset.category })));
+    screen.querySelectorAll("[data-show-all]").forEach(button => button.addEventListener("click", () => { state.showAllCategories = true; render(); }));
+    screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)) })));
+    screen.querySelectorAll("[data-audience]").forEach(button => button.addEventListener("click", () => navigate("tone", { audience: button.dataset.audience })));
+    screen.querySelectorAll("[data-tone]").forEach(button => button.addEventListener("click", () => navigate("result", { tone: button.dataset.tone })));
+    screen.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", () => copyText(getResults(state.item, state.audience, state.tone)[Number(button.dataset.copy)])));
+    screen.querySelectorAll("[data-favorite]").forEach(button => button.addEventListener("click", () => toggleFavorite(getResults(state.item, state.audience, state.tone)[Number(button.dataset.favorite)], button)));
+    screen.querySelectorAll("[data-copy-saved]").forEach(button => button.addEventListener("click", () => { const item = [...state.saved.favorites, ...state.saved.history].find(entry => entry.key === button.dataset.copySaved); if (item) copyText(item.text); }));
+    screen.querySelectorAll("[data-remove-favorite]").forEach(button => button.addEventListener("click", () => { state.saved.favorites = state.saved.favorites.filter(item => item.key !== button.dataset.removeFavorite); save(); render(); showToast("お気に入りから外しました"); }));
+    screen.querySelectorAll("[data-go-home], [data-restart]").forEach(button => button.addEventListener("click", () => navigate("home")));
+    const input = document.getElementById("searchInput");
+    if (input) input.addEventListener("input", () => {
+      state.query = input.value;
+      const q = state.query.trim().toLowerCase();
+      const matches = q ? DATA.items.filter(item => item.honest.toLowerCase().includes(q) || (DATA.categories.find(c => c.id === item.category) || {}).label.includes(q)) : DATA.items;
+      const results = document.getElementById("searchResults");
+      results.innerHTML = renderSearchResults(matches, q);
+      results.querySelectorAll("[data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === button.dataset.searchItem) })));
+    });
+  }
+
+  function toggleFavorite(text, button) {
+    const record = savedRecord(text);
+    const exists = state.saved.favorites.some(item => item.key === record.key);
+    state.saved.favorites = exists ? state.saved.favorites.filter(item => item.key !== record.key) : [record, ...state.saved.favorites].slice(0, 100);
+    save();
+    button.setAttribute("aria-pressed", String(!exists));
+    button.setAttribute("aria-label", `お気に入り${exists ? "に追加" : "から削除"}`);
+    button.textContent = exists ? "♡" : "♥";
+    showToast(exists ? "お気に入りから外しました" : "あとで使えるように保存しました");
+  }
+
+  function goBack() {
+    const previous = { category: "home", audience: "category", tone: "audience", result: "tone" };
+    navigate(previous[state.view] || "home");
+  }
+
+  backButton.addEventListener("click", goBack);
+  brandButton.addEventListener("click", () => navigate("home"));
+  menuButton.addEventListener("click", () => { menuButton.setAttribute("aria-expanded", "true"); showDialog(menuDialog); });
+  menuDialog.addEventListener("close", () => menuButton.setAttribute("aria-expanded", "false"));
+  document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => {
+    const dialog = button.closest("dialog");
+    if (dialog === introDialog) {
+      state.saved.introSeen = true;
+      save();
+    }
+    closeDialog(dialog);
+  }));
+  document.getElementById("startButton").addEventListener("click", () => { state.saved.introSeen = true; save(); closeDialog(introDialog); });
+  document.getElementById("showIntroButton").addEventListener("click", () => { closeDialog(menuDialog); showDialog(introDialog); });
+  document.getElementById("clearDataButton").addEventListener("click", () => { if (!window.confirm("お気に入りと履歴をすべて消しますか？")) return; state.saved = { favorites: [], history: [], introSeen: true }; save(); closeDialog(menuDialog); navigate("home"); showToast("保存データを消去しました"); });
+  bottomNav.addEventListener("click", event => { const button = event.target.closest("button[data-nav]"); if (button) navigate(button.dataset.nav); });
+  window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); deferredInstallPrompt = event; installButton.hidden = false; });
+  installButton.addEventListener("click", async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; installButton.hidden = true; });
+
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  render();
+  if (!state.saved.introSeen) showDialog(introDialog);
+}());
