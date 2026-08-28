@@ -5,7 +5,7 @@
   const DATA = window.YAWARAKA_DATA;
   const screen = document.getElementById("screen");
   const backButton = document.getElementById("backButton");
-  const menuButton = document.getElementById("menuButton");
+  const menuButton = document.getElementById("bottomMenuButton");
   const brandButton = document.getElementById("brandButton");
   const bottomNav = document.getElementById("bottomNav");
   const toast = document.getElementById("toast");
