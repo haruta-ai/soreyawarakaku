@@ -31,6 +31,7 @@ button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3
 .brand-button, .icon-button { min-width: 44px; min-height: 44px; border: 0; background: transparent; cursor: pointer; }
 .brand-button { display: flex; justify-content: center; align-items: center; min-width: 0; font-family: ui-serif, "Hiragino Mincho ProN", serif; font-weight: 700; font-size: 19px; letter-spacing: .025em; }
 .brand-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-spacer { width: 44px; height: 44px; justify-self: end; }
 .icon-button { border-radius: 50%; font-size: 25px; }
 .menu-button { display: grid; place-items: center; width: 40px; min-width: 40px; height: 40px; min-height: 40px; justify-self: end; color: var(--accent-dark); background: var(--accent-soft); font-size: 21px; line-height: 1; }
 .icon-button:hover { background: var(--accent-soft); }
@@ -90,9 +91,11 @@ h3 { margin: 0; font-size: 17px; }
 .empty h2 { color: var(--ink); }
 .empty p { line-height: 1.7; }
 .quick-card { margin-top: 12px; line-height: 1.55; }
-.bottom-nav { position: fixed; bottom: 0; left: 50%; z-index: 20; display: grid; grid-template-columns: repeat(4, 1fr); width: min(100%, 680px); padding: 6px 6px calc(6px + var(--safe-bottom)); transform: translateX(-50%); background: rgba(255,253,249,.96); border-top: 1px solid var(--line); }
+.bottom-nav { position: fixed; bottom: 0; left: 50%; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr); width: min(100%, 680px); padding: 6px 6px calc(6px + var(--safe-bottom)); transform: translateX(-50%); background: rgba(255,253,249,.96); border-top: 1px solid var(--line); }
 .bottom-nav button { min-height: 52px; color: var(--muted); background: transparent; border: 0; border-radius: 12px; font-size: 11px; font-weight: 650; cursor: pointer; }
 .bottom-nav button span { display: block; margin-bottom: 2px; font-size: 20px; line-height: 1; }
+.bottom-nav .settings-nav { color: var(--accent-dark); font-weight: 800; }
+.bottom-nav .settings-nav span { font-size: 25px; }
 .bottom-nav button.is-active { color: var(--accent-dark); background: var(--accent-soft); }
 .dialog { width: min(calc(100% - 32px), 480px); padding: 28px 22px 22px; color: var(--ink); background: var(--surface); border: 0; border-radius: 22px; box-shadow: 0 24px 70px rgba(36,35,31,.2); }
 .dialog::backdrop { background: rgba(36,35,31,.45); backdrop-filter: blur(2px); }
