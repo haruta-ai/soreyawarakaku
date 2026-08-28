@@ -78,7 +78,7 @@
   }
 
   function render() {
-    const renderers = { home: renderHome, category: renderCategory, settings: renderSettings, result: renderResult, search: renderSearch, favorites: renderFavorites, history: renderHistory };
+    const renderers = { home: renderHome, category: renderCategory, audience: renderAudience, tone: renderTone, settings: renderSettings, result: renderResult, search: renderSearch, favorites: renderFavorites, history: renderHistory };
     screen.innerHTML = (renderers[state.view] || renderHome)();
     if (backButton) backButton.hidden = ["home", "search", "favorites", "history"].includes(state.view);
     bottomNav.querySelectorAll("button").forEach(button => button.classList.toggle("is-active", button.dataset.nav === state.view || (button.dataset.nav === "home" && !["search", "favorites", "history"].includes(state.view))));
@@ -87,7 +87,7 @@
 
   function renderHome() {
     const recent = state.saved.history.slice(0, 2);
-    return `<div class="hero"><p class="eyebrow">言いにくいを、言いやすく。</p><h1>本音の角を、<br>すこし丸く。</h1><p class="lead">言いたいことを選ぶだけ。大人の言い方を、すぐ3つ。</p></div>
+    return `<div class="hero"><h1 class="hero-title">言いにくいを、言いやすく</h1><p class="hero-subtitle">本音の角を、すこし丸く</p></div>
       <div class="section-heading"><h2>どんな場面ですか？</h2><span>${DATA.items.length * Object.keys(DATA.tones).length * Object.keys(DATA.audiences).length}通り</span></div>
       <div class="category-grid">${DATA.categories.map(categoryCard).join("")}</div>
       ${recent.length ? `<div class="section-heading"><h2>最近使った言い方</h2></div><div class="list">${recent.map(savedCard).join("")}</div>` : ""}`;
@@ -108,11 +108,11 @@
   }
 
   function renderAudience() {
-    return `${steps(2)}<p class="eyebrow">STEP 2</p><h1>誰に伝えますか？</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip" type="button" data-audience="${id}">${escapeHtml(audience.label)}</button>`).join("")}</div>`;
+    return `${steps(2)}<p class="eyebrow">STEP 2</p><h1>相手との関係性は？</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip" type="button" data-audience="${id}">${escapeHtml(audience.label)}</button>`).join("")}</div>`;
   }
 
   function renderTone() {
-    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip" type="button" data-tone="${id}">${escapeHtml(tone.label)}</button>`).join("")}</div>`;
+    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>温度感は？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip" type="button" data-tone="${id}">${escapeHtml(tone.label)}</button>`).join("")}</div>`;
   }
 
   function renderSettings() {
@@ -196,7 +196,7 @@
 
   function bindScreenEvents() {
     screen.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => navigate("category", { category: button.dataset.category })));
-    screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("result", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)), audience: "colleague", tone: "soft" })));
+    screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)), audience: null, tone: null })));
     screen.querySelectorAll("[data-adjust]").forEach(button => button.addEventListener("click", () => navigate("settings")));
     screen.querySelectorAll("[data-set-audience]").forEach(button => button.addEventListener("click", () => { state.audience = button.dataset.setAudience; render(); }));
     screen.querySelectorAll("[data-set-tone]").forEach(button => button.addEventListener("click", () => { state.tone = button.dataset.setTone; render(); }));
@@ -215,7 +215,7 @@
       const matches = q ? DATA.items.filter(item => item.honest.toLowerCase().includes(q) || (DATA.categories.find(c => c.id === item.category) || {}).label.includes(q)) : DATA.items;
       const results = document.getElementById("searchResults");
       results.innerHTML = renderSearchResults(matches, q);
-      results.querySelectorAll("[data-search-item]").forEach(button => button.addEventListener("click", () => navigate("result", { item: DATA.items.find(item => item.id === button.dataset.searchItem), audience: "colleague", tone: "soft" })));
+      results.querySelectorAll("[data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === button.dataset.searchItem), audience: null, tone: null })));
     });
   }
 
