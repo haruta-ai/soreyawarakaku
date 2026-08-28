@@ -80,7 +80,7 @@
   function render() {
     const renderers = { home: renderHome, category: renderCategory, settings: renderSettings, result: renderResult, search: renderSearch, favorites: renderFavorites, history: renderHistory };
     screen.innerHTML = (renderers[state.view] || renderHome)();
-    backButton.hidden = ["home", "search", "favorites", "history"].includes(state.view);
+    if (backButton) backButton.hidden = ["home", "search", "favorites", "history"].includes(state.view);
     bottomNav.querySelectorAll("button").forEach(button => button.classList.toggle("is-active", button.dataset.nav === state.view || (button.dataset.nav === "home" && !["search", "favorites", "history"].includes(state.view))));
     bindScreenEvents();
   }
@@ -235,8 +235,8 @@
     navigate(previous[state.view] || "home");
   }
 
-  backButton.addEventListener("click", goBack);
-  brandButton.addEventListener("click", () => navigate("home"));
+  if (backButton) backButton.addEventListener("click", goBack);
+  if (brandButton) brandButton.addEventListener("click", () => navigate("home"));
   menuButton.addEventListener("click", () => { menuButton.setAttribute("aria-expanded", "true"); showDialog(menuDialog); });
   menuDialog.addEventListener("close", () => menuButton.setAttribute("aria-expanded", "false"));
   document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => {
