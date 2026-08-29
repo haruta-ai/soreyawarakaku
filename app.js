@@ -88,7 +88,7 @@
   function renderHome() {
     const recent = state.saved.history.slice(0, 2);
     return `<div class="hero"><h1 class="hero-title">言いにくいを、言いやすく</h1><p class="hero-subtitle">本音の角を、すこし丸く</p></div>
-      <div class="section-heading"><h2>どんな場面ですか？</h2><span>${DATA.items.length * Object.keys(DATA.tones).length * Object.keys(DATA.audiences).length}通り</span></div>
+      <div class="section-heading"><h2>どんな場面ですか？</h2><span>${DATA.items.length * Object.keys(DATA.tones).length * Object.keys(DATA.audiences).length * 5}会話パターン</span></div>
       <div class="category-grid">${DATA.categories.map(categoryCard).join("")}</div>
       ${recent.length ? `<div class="section-heading"><h2>最近使った言い方</h2></div><div class="list">${recent.map(savedCard).join("")}</div>` : ""}`;
   }
@@ -120,16 +120,28 @@
   }
 
   function sourceToneFor(audience, toneId) {
-    if (audience.style === "upward") {
+    if (audience.style === "upward" || audience.style === "external") {
       if (toneId === "firm") return "polite";
       if (toneId === "humor") return "soft";
     }
+    if (audience.style === "downward" && toneId === "polite") return "soft";
     if (audience.style === "casual" && toneId === "polite") return "soft";
     return toneId;
   }
 
-  function casualize(text) {
+  function downwardize(text) {
     return text
+      .replaceAll("いただけますでしょうか", "もらえますか")
+      .replaceAll("いただけますか", "もらえますか")
+      .replaceAll("いただけると助かります", "もらえると助かります")
+      .replaceAll("お願いいたします", "お願いします")
+      .replaceAll("ご確認いただけます", "確認してもらえます")
+      .replaceAll("ご共有いただけます", "共有してもらえます")
+      .replaceAll("ご教示いただけます", "教えてもらえます");
+  }
+
+  function casualize(text) {
+    return downwardize(text)
       .replaceAll("いただけますでしょうか", "もらえる？")
       .replaceAll("いただけますか", "もらえる？")
       .replaceAll("いただけると助かります", "もらえると助かる")
@@ -143,29 +155,138 @@
       .replaceAll("でしょうか", "？")
       .replaceAll("ますか。", "？")
       .replaceAll("ますか", "？")
-      .replaceAll("ます。", "よ。")
-      .replaceAll("です。", "だよ。");
+      .replaceAll("できません。", "できないんだ。")
+      .replaceAll("できません", "できない")
+      .replaceAll("できると", "できるなら")
+      .replaceAll("難しいです。", "難しいんだ。")
+      .replaceAll("大丈夫です。", "大丈夫だよ。")
+      .replaceAll("必要です。", "必要だよ。")
+      .replaceAll("ありません。", "ないんだ。")
+      .replaceAll("申し上げます", "伝えるね");
   }
 
   function getResults(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
     const raw = item.variants[sourceToneFor(audience, toneId)];
     return raw.map((text, index) => {
-      const wording = audience.style === "casual" ? casualize(text) : text;
+      const wording = audience.style === "casual" ? casualize(text) : audience.style === "downward" ? downwardize(text) : text;
       return `${audience.frames[index]}${wording}`;
+    });
+  }
+
+  const FOLLOW_UPS = {
+    decline: ["現状では対応できる範囲が限られています。", "今回はこの条件でのお引き受けは難しいため、別の進め方をご検討ください。"],
+    remind: ["いつ頃までに見通しが立つか、目安を教えてください。", "予定を合わせたいので、難しい場合も一度ご連絡をお願いします。"],
+    caution: ["同じことが起きないよう、次からの確認方法を一緒に決めたいです。", "この点が整うまで、次の工程には進めません。"],
+    object: ["考え方は理解しました。そのうえで、気になっている点をもう一度確認させてください。", "この条件では合意が難しいため、別案を含めて考えたいです。"],
+    apology: ["ご迷惑をおかけした点は受け止めています。対応と再発防止を進めます。", "まずは今回の対応を完了させ、次回に向けた確認方法も見直します。"],
+    request: ["難しい点があれば、どこまでならできるか相談させてください。", "この件を進めるため、対応の可否と目安を教えてください。"],
+    anger: ["責めたいわけではなく、同じことが続かないようにしたいです。", "この点は私にとって大切なので、対応方法を一緒に決めたいです。"],
+    reschedule: ["影響を小さくするため、代わりの日程や進め方を相談させてください。", "この日程では難しいため、変更後の予定で合意してから進めたいです。"],
+    invitation: ["誘ってくれたことはうれしいです。今回は見送りますが、また別の機会にお願いします。", "今回は参加できません。気を遣わず、皆さんで楽しんでください。"],
+    lateReply: ["遅くなってしまいすみません。必要なことはきちんとお返事します。", "今後同じことがないよう、確認の仕方を見直します。"],
+    work: ["役割と必要な情報を整理できれば、進め方を一緒に考えられます。", "担当範囲を確認したうえで、対応できる部分を決めましょう。"],
+    home: ["お互いに気持ちよく過ごしたいから、どうしたら続けられるか一緒に考えたいです。", "この点は譲れないので、次からの約束を決めたいです。"],
+    negotiate: ["こちらの事情も踏まえ、双方が進めやすい着地点を探したいです。", "この条件では合意が難しいため、条件が整ったら改めて相談させてください。"]
+  };
+
+  const DOWNWARD_FOLLOW_UPS = {
+    decline: ["今の状況でできる範囲を整理して、改めて相談してください。", "この条件のままでは進められないので、別案を出してください。"],
+    remind: ["いつ頃までにできそうか、目安を教えてください。", "難しい場合は、先に連絡してください。"],
+    caution: ["同じことが起きないよう、次からの確認方法を決めましょう。", "この点が整うまで、次の工程には進めません。"],
+    object: ["考え方は分かりました。気になる点をもう一度整理してください。", "この条件では進められないので、別案を考えてください。"],
+    apology: ["対応と再発防止を進めてください。困ったら早めに相談してください。", "今回の対応を終えたら、次回に向けた確認方法も見直しましょう。"],
+    request: ["難しい点があれば、どこまでならできるか教えてください。", "進めるために、対応の可否と目安を決めましょう。"],
+    anger: ["責めたいわけではなく、同じことが続かないようにしたいです。", "この点は大切なので、次からの対応方法を決めましょう。"],
+    reschedule: ["影響を小さくするため、代わりの日程を一緒に決めましょう。", "変更後の予定で合意してから進めてください。"],
+    invitation: ["今回は見送ります。気を遣わず、皆さんで楽しんでください。", "今回は参加できません。次の予定は早めに教えてください。"],
+    lateReply: ["必要なことはきちんと返してください。難しい時は先に一言ください。", "次からは確認の仕方を見直してください。"],
+    work: ["役割と必要な情報を整理してから進めてください。", "担当範囲を確認して、対応できる部分を決めましょう。"],
+    home: ["お互いに気持ちよく過ごすため、次からの約束を決めましょう。", "この点は大切なので、続けられる形を一緒に考えましょう。"],
+    negotiate: ["こちらの事情も踏まえて、進めやすい着地点を考えましょう。", "この条件では進められないので、条件を整理してください。"]
+  };
+
+  const CASUAL_FOLLOW_UPS = {
+    decline: ["今のままだと難しいから、できる範囲を一緒に考えたい。", "今回は引き受けられないよ。別の方法を考えよう。"],
+    remind: ["いつ頃できそうか、目安だけ教えて。", "難しそうなら、先にひとことちょうだい。"],
+    caution: ["同じことが続かないように、次からどうするか決めたい。", "ここが整うまでは、次には進めないよ。"],
+    object: ["言いたいことは分かったよ。気になってるところをもう一度話したい。", "このままだと納得できないから、別の方法を考えたい。"],
+    apology: ["迷惑をかけたことは分かってる。ちゃんと対応するね。", "今回を片づけたら、次から困らない方法も考えるね。"],
+    request: ["難しいところがあったら、どこまでならできるか教えて。", "進めたいから、できそうかどうか教えてほしい。"],
+    anger: ["責めたいわけじゃなくて、同じことが続かないようにしたい。", "私には大事なことだから、これからどうするか一緒に決めたい。"],
+    reschedule: ["困らないように、代わりの日を一緒に決めたい。", "この日だと難しいから、予定を変えてから進めたい。"],
+    invitation: ["誘ってくれてうれしい。でも今回は見送るね。", "今回は行けないから、気にせず楽しんでね。"],
+    lateReply: ["遅くなってごめん。必要なことはちゃんと返すね。", "次からは確認の仕方を変えるね。"],
+    work: ["役割と必要なことを整理してから進めたい。", "どこまで誰がやるか決めてから進めよう。"],
+    home: ["お互い気持ちよく過ごしたいから、次からの約束を決めたい。", "ここは大事だから、続けられる形を一緒に考えたい。"],
+    negotiate: ["こっちの事情もあるから、進めやすいところを一緒に探したい。", "この条件のままは難しいから、もう一度考えたい。"]
+  };
+
+  function followUpPrefix(audience, toneId, level) {
+    const prefixes = {
+      upward: {
+        soft: ["ご事情は承知しました。ただ、", "恐れ入りますが、"],
+        polite: ["ご事情は承知しております。ただ、", "恐縮ですが、"],
+        firm: ["承知しました。ただ、", "恐縮ですが、"],
+        distance: ["今後については、", "方針として、"],
+        humor: ["ご事情は承知しました。ただ、", "恐れ入りますが、"]
+      },
+      external: {
+        soft: ["ご状況は承知しております。ただ、", "恐れ入りますが、"],
+        polite: ["ご事情は承知しております。ただ、", "恐縮ではございますが、"],
+        firm: ["承知しております。ただ、", "恐れ入りますが、"],
+        distance: ["今後につきましては、", "方針として、"],
+        humor: ["ご状況は承知しております。ただ、", "恐れ入りますが、"]
+      },
+      downward: {
+        soft: ["状況は分かりました。ただ、", "次に進めるため、"],
+        polite: ["状況は分かりました。ただ、", "次に進めるため、"],
+        firm: ["状況は分かりました。ただ、", "次に必要なのは、"],
+        distance: ["今後は、", "方針として、"],
+        humor: ["状況は分かりました。ただ、", "次に進めるため、"]
+      },
+      peer: {
+        soft: ["そうなんですね。ただ、", "進め方を合わせたいので、"],
+        polite: ["そうなんですね。ただ、", "進め方を合わせたいので、"],
+        firm: ["理解しました。ただ、", "ここは決めておきたいので、"],
+        distance: ["今後については、", "方針として、"],
+        humor: ["なるほど。ただ、", "真面目な話をすると、"]
+      },
+      casual: {
+        soft: ["そっか。でも、", "だからこそ、"],
+        polite: ["そっか。でも、", "だからこそ、"],
+        firm: ["分かった。でも、", "ここは大事だから、"],
+        distance: ["これからは、", "私としては、"],
+        humor: ["そうきたか。でも、", "冗談はここまでで、"]
+      }
+    };
+    return prefixes[audience.style][toneId][level];
+  }
+
+  function getFollowUps(item, audienceId, toneId) {
+    const audience = DATA.audiences[audienceId];
+    const lines = audience.style === "casual" ? CASUAL_FOLLOW_UPS[item.category] || CASUAL_FOLLOW_UPS.request : audience.style === "downward" ? DOWNWARD_FOLLOW_UPS[item.category] || DOWNWARD_FOLLOW_UPS.request : FOLLOW_UPS[item.category] || FOLLOW_UPS.request;
+    return lines.map((line, index) => {
+      return `${followUpPrefix(audience, toneId, index)}${line}`;
     });
   }
 
   function renderResult() {
     const results = getResults(state.item, state.audience, state.tone);
     addHistory(results[0]);
-    return `<div class="result-intro"><p class="eyebrow">すぐ使える3案</p><h1>角は取れました。<br>要点は残っています。</h1><div class="honest-box"><small>本音</small><p>「${escapeHtml(state.item.honest)}」</p></div><h2>大人の言い方</h2><p class="lead">${escapeHtml(DATA.audiences[state.audience].label)}へ・${escapeHtml(DATA.tones[state.tone].label)}</p><button class="adjust-button" type="button" data-adjust>相手・温度を変える</button></div><div class="result-list">${results.map((text, index) => resultCard(text, index)).join("")}</div><button class="secondary-button" type="button" data-restart>別の言い方を探す</button>`;
+    const followUps = getFollowUps(state.item, state.audience, state.tone);
+    return `<div class="result-intro"><p class="eyebrow">最初のひと言</p><h1>角は取れました。<br>要点は残っています。</h1><div class="honest-box"><small>本音</small><p>「${escapeHtml(state.item.honest)}」</p></div><h2>大人の言い方</h2><p class="lead">${escapeHtml(DATA.audiences[state.audience].label)}へ・${escapeHtml(DATA.tones[state.tone].label)}</p><button class="adjust-button" type="button" data-adjust>相手・温度を変える</button></div><div class="result-list">${results.map((text, index) => resultCard(text, index)).join("")}</div><section class="conversation-path" aria-label="会話を続けるための返答"><p class="eyebrow">会話が続くとき</p><h2>次に返すひと言</h2><p class="lead">相手が難色を示したときの、2つ先までの返しです。</p>${followUps.map((text, index) => followUpCard(text, index)).join("")}</section><button class="secondary-button" type="button" data-restart>別の言い方を探す</button>`;
   }
 
   function resultCard(text, index) {
     const key = favoriteKey(text);
     const active = state.saved.favorites.some(item => item.key === key);
     return `<article class="result-card"><small>案 ${index + 1}</small><p>${escapeHtml(text)}</p><button class="favorite-button" type="button" data-favorite="${index}" aria-label="お気に入り${active ? "から削除" : "に追加"}" aria-pressed="${active}">${active ? "♥" : "♡"}</button><button class="copy-button" type="button" data-copy="${index}">この言い方をコピー</button></article>`;
+  }
+
+  function followUpCard(text, index) {
+    const title = index === 0 ? "相手が迷ったら" : "さらに伝えるなら";
+    return `<article class="followup-card"><small>${title}</small><p>${escapeHtml(text)}</p><button class="copy-button" type="button" data-copy-followup="${index}">この返しをコピー</button></article>`;
   }
 
   function renderSearch() {
@@ -230,6 +351,7 @@
     screen.querySelectorAll("[data-audience]").forEach(button => button.addEventListener("click", () => navigate("tone", { audience: button.dataset.audience })));
     screen.querySelectorAll("[data-tone]").forEach(button => button.addEventListener("click", () => navigate("result", { tone: button.dataset.tone })));
     screen.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", () => copyText(getResults(state.item, state.audience, state.tone)[Number(button.dataset.copy)])));
+    screen.querySelectorAll("[data-copy-followup]").forEach(button => button.addEventListener("click", () => copyText(getFollowUps(state.item, state.audience, state.tone)[Number(button.dataset.copyFollowup)])));
     screen.querySelectorAll("[data-favorite]").forEach(button => button.addEventListener("click", () => toggleFavorite(getResults(state.item, state.audience, state.tone)[Number(button.dataset.favorite)], button)));
     screen.querySelectorAll("[data-copy-saved]").forEach(button => button.addEventListener("click", () => { const item = [...state.saved.favorites, ...state.saved.history].find(entry => entry.key === button.dataset.copySaved); if (item) copyText(item.text); }));
     screen.querySelectorAll("[data-remove-favorite]").forEach(button => button.addEventListener("click", () => { state.saved.favorites = state.saved.favorites.filter(item => item.key !== button.dataset.removeFavorite); save(); render(); showToast("お気に入りから外しました"); }));
