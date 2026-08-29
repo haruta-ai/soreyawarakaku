@@ -87,9 +87,12 @@
 
   function renderHome() {
     const recent = state.saved.history.slice(0, 2);
+    const quickCategories = DATA.categories.slice(0, 6);
+    const otherCategories = DATA.categories.slice(6);
     return `<div class="hero"><h1 class="hero-title">言いにくいを、言いやすく</h1><p class="hero-subtitle">本音の角を、すこし丸く</p></div>
-      <div class="section-heading"><h2>どんな場面ですか？</h2><span>${DATA.items.length * Object.keys(DATA.tones).length * Object.keys(DATA.audiences).length * 5}会話パターン</span></div>
-      <div class="category-grid">${DATA.categories.map(categoryCard).join("")}</div>
+      <div class="section-heading"><h2>今、近い場面は？</h2><span>選ぶだけ</span></div>
+      <div class="category-grid">${quickCategories.map(categoryCard).join("")}</div>
+      <details class="more-choices"><summary>ほかの場面を見る <span>${otherCategories.length}件</span></summary><div class="category-grid">${otherCategories.map(categoryCard).join("")}</div></details>
       ${recent.length ? `<div class="section-heading"><h2>最近使った言い方</h2></div><div class="list">${recent.map(savedCard).join("")}</div>` : ""}`;
   }
 
@@ -108,12 +111,19 @@
   }
 
   function renderAudience() {
-    return `${steps(2)}<p class="eyebrow">STEP 2</p><h1>相手との関係性は？</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip" type="button" data-audience="${id}">${escapeHtml(audience.label)}</button>`).join("")}</div>`;
+    const primary = ["boss", "colleague", "family", "friend"];
+    const rest = Object.keys(DATA.audiences).filter(id => !primary.includes(id));
+    return `${steps(2)}<p class="eyebrow">STEP 2 / 3</p><h1>誰に伝える？</h1><p class="selection-summary">「${escapeHtml(state.item.honest)}」</p><div class="chip-grid chip-grid-primary">${primary.map(id => audienceChip(id)).join("")}</div><details class="more-choices"><summary>ほかの相手を見る <span>${rest.length}件</span></summary><div class="chip-grid">${rest.map(id => audienceChip(id)).join("")}</div></details>`;
   }
 
   function renderTone() {
-    return `${steps(3)}<p class="eyebrow">STEP 3</p><h1>温度感は？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip" type="button" data-tone="${id}">${escapeHtml(tone.label)}</button>`).join("")}</div>`;
+    const primary = ["soft", "polite", "firm"];
+    const rest = Object.keys(DATA.tones).filter(id => !primary.includes(id));
+    return `${steps(3)}<p class="eyebrow">STEP 3 / 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid tone-grid">${primary.map(id => toneChip(id)).join("")}</div><details class="more-choices"><summary>ほかの温度を選ぶ <span>${rest.length}件</span></summary><div class="chip-grid">${rest.map(id => toneChip(id)).join("")}</div></details>`;
   }
+
+  function audienceChip(id) { return `<button class="chip" type="button" data-audience="${id}">${escapeHtml(DATA.audiences[id].label)}</button>`; }
+  function toneChip(id) { return `<button class="chip tone-${id}" type="button" data-tone="${id}">${escapeHtml(DATA.tones[id].label)}</button>`; }
 
   function renderSettings() {
     return `<p class="eyebrow">必要なときだけ調整</p><h1>相手と温度を変える</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><h2 class="setting-title">誰に伝える？</h2><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip ${state.audience === id ? "is-selected" : ""}" type="button" data-set-audience="${id}" aria-pressed="${state.audience === id}">${escapeHtml(audience.label)}</button>`).join("")}</div><h2 class="setting-title">どんな温度で？</h2><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip ${state.tone === id ? "is-selected" : ""}" type="button" data-set-tone="${id}" aria-pressed="${state.tone === id}">${escapeHtml(tone.label)}</button>`).join("")}</div><button class="primary-button" type="button" data-apply-settings>この条件で3案を見る</button>`;
@@ -149,8 +159,13 @@
       .replaceAll("お願いします", "お願い")
       .replaceAll("申し訳ございません", "ごめん")
       .replaceAll("申し訳ありません", "ごめん")
-      .replaceAll("ください。", "してね。")
-      .replaceAll("ください", "してね")
+      .replaceAll("見送らせてください。", "今回は見送るね。")
+      .replaceAll("お引き受けできません。", "引き受けられないんだ。")
+      .replaceAll("対応いたしかねます。", "今回は難しいんだ。")
+      .replaceAll("お受けすることが難しいです。", "引き受けるのは難しいんだ。")
+      .replaceAll("お待ちください。", "待ってね。")
+      .replaceAll("してください。", "してね。")
+      .replaceAll("してください", "してね")
       .replaceAll("でしょうか。", "？")
       .replaceAll("でしょうか", "？")
       .replaceAll("ますか。", "？")
@@ -275,7 +290,7 @@
     const results = getResults(state.item, state.audience, state.tone);
     addHistory(results[0]);
     const followUps = getFollowUps(state.item, state.audience, state.tone);
-    return `<div class="result-intro"><p class="eyebrow">最初のひと言</p><h1>角は取れました。<br>要点は残っています。</h1><div class="honest-box"><small>本音</small><p>「${escapeHtml(state.item.honest)}」</p></div><h2>大人の言い方</h2><p class="lead">${escapeHtml(DATA.audiences[state.audience].label)}へ・${escapeHtml(DATA.tones[state.tone].label)}</p><button class="adjust-button" type="button" data-adjust>相手・温度を変える</button></div><div class="result-list">${results.map((text, index) => resultCard(text, index)).join("")}</div><section class="conversation-path" aria-label="会話を続けるための返答"><p class="eyebrow">会話が続くとき</p><h2>次に返すひと言</h2><p class="lead">相手が難色を示したときの、2つ先までの返しです。</p>${followUps.map((text, index) => followUpCard(text, index)).join("")}</section><button class="secondary-button" type="button" data-restart>別の言い方を探す</button>`;
+    return `<div class="result-intro"><p class="eyebrow">このまま伝えられます</p><h1>まずは、このひと言。</h1><div class="honest-box"><small>本音</small><p>「${escapeHtml(state.item.honest)}」</p></div><p class="lead">${escapeHtml(DATA.audiences[state.audience].label)}へ・${escapeHtml(DATA.tones[state.tone].label)}</p><button class="adjust-button" type="button" data-adjust>相手・温度を変える</button></div><div class="result-list">${results.map((text, index) => resultCard(text, index)).join("")}</div><section class="conversation-path" aria-label="会話を続けるための返答"><p class="eyebrow">会話が続くなら</p><h2>次に返すひと言</h2><p class="lead">相手に押し返されたときの、次のひと言です。</p>${followUps.map((text, index) => followUpCard(text, index)).join("")}</section><button class="secondary-button" type="button" data-restart>別の言い方を探す</button>`;
   }
 
   function resultCard(text, index) {
@@ -285,7 +300,7 @@
   }
 
   function followUpCard(text, index) {
-    const title = index === 0 ? "相手が迷ったら" : "さらに伝えるなら";
+    const title = index === 0 ? "2つ目の返し" : "3つ目の返し";
     return `<article class="followup-card"><small>${title}</small><p>${escapeHtml(text)}</p><button class="copy-button" type="button" data-copy-followup="${index}">この返しをコピー</button></article>`;
   }
 
