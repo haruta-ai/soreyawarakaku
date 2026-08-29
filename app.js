@@ -22,6 +22,7 @@
     item: null,
     audience: null,
     tone: null,
+    privateApproach: "empathy",
     query: "",
     saved: loadSaved()
   };
@@ -119,7 +120,9 @@
   function renderTone() {
     const primary = ["soft", "polite", "firm"];
     const rest = Object.keys(DATA.tones).filter(id => !primary.includes(id));
-    return `${steps(3)}<p class="eyebrow">STEP 3 / 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p><div class="chip-grid tone-grid">${primary.map(id => toneChip(id)).join("")}</div><details class="more-choices"><summary>ほかの温度を選ぶ <span>${rest.length}件</span></summary><div class="chip-grid">${rest.map(id => toneChip(id)).join("")}</div></details>`;
+    const isPrivate = DATA.audiences[state.audience].style === "casual";
+    const approach = isPrivate ? `<fieldset class="private-approach"><legend>相手への向き合い方</legend><button class="approach-chip ${state.privateApproach === "empathy" ? "is-selected" : ""}" type="button" data-private-approach="empathy" aria-pressed="${state.privateApproach === "empathy"}">共感を先に</button><button class="approach-chip ${state.privateApproach === "solve" ? "is-selected" : ""}" type="button" data-private-approach="solve" aria-pressed="${state.privateApproach === "solve"}">一緒に整理する</button></fieldset>` : "";
+    return `${steps(3)}<p class="eyebrow">STEP 3 / 3</p><h1>どんな温度で？</h1><p class="selection-summary">${escapeHtml(DATA.audiences[state.audience].label)}へ：「${escapeHtml(state.item.honest)}」</p>${approach}<div class="chip-grid tone-grid">${primary.map(id => toneChip(id)).join("")}</div><details class="more-choices"><summary>ほかの温度を選ぶ <span>${rest.length}件</span></summary><div class="chip-grid">${rest.map(id => toneChip(id)).join("")}</div></details>`;
   }
 
   function audienceChip(id) { return `<button class="chip" type="button" data-audience="${id}">${escapeHtml(DATA.audiences[id].label)}</button>`; }
@@ -263,17 +266,21 @@
     return (BUSINESS_FRAMES[audience.style] || audience.frames)[index] || "";
   }
 
-  function privateFrame(audienceId, category, index, toneId) {
+  function privateFrame(audienceId, category, index, toneId, approach) {
     const emotional = ["home", "anger", "caution", "object"].includes(category);
     const frames = {
       family: emotional
         ? ["家のことだから、", "お互い気持ちよくいたいから、", "先に言っておくね、"]
         : ["今ちょっと話したいんだけど、", "気持ちだけ聞いてほしいんだけど、", "先に言っておくね、"],
       partner: emotional
-        ? ["大事なことだから、", "ふたりで気持ちよくいたいから、", "責めたいわけじゃないんだけど、"]
+        ? ["聞いてほしいんだけど、", "ふたりで気持ちよくいたいから、", "責めたいわけじゃないんだけど、"]
         : ["ちゃんと伝えておきたいんだけど、", "無理をしたくないから、", "先に言っておくね、"],
       friend: ["正直に言うと、", "ちょっと相談なんだけど、", "先に言っておくね、"]
     };
+    if (approach === "solve") {
+      const solve = { family: ["今のことを整理したいんだけど、", "次どうするか決めたいから、", "先に言っておくね、"], partner: ["落ち着いて話したいんだけど、", "ふたりでどうするか決めたいから、", "先に言っておくね、"], friend: ["一緒に考えたいんだけど、", "どうするか相談したくて、", "先に言っておくね、"] };
+      return solve[audienceId][index];
+    }
     if (toneId === "firm") {
       const firm = { family: ["はっきり言うと、", "ここは大事だから、", "先に言っておくね、"], partner: ["はっきり伝えると、", "ここは大事だから、", "先に言っておくね、"], friend: ["率直に言うと、", "ここは大事だから、", "先に言っておくね、"] };
       return firm[audienceId][index];
@@ -284,7 +291,7 @@
   function getResults(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
     if (audience.style === "casual" && CASUAL_RESULTS[item.id]) {
-      return CASUAL_RESULTS[item.id].map((text, index) => `${privateFrame(audienceId, item.category, index, toneId)}${text}`);
+      return CASUAL_RESULTS[item.id].map((text, index) => `${privateFrame(audienceId, item.category, index, toneId, state.privateApproach)}${text}`);
     }
     const raw = item.variants[sourceToneFor(audience, toneId)];
     return raw.map((text, index) => {
@@ -462,10 +469,11 @@
 
   function bindScreenEvents() {
     screen.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => navigate("category", { category: button.dataset.category })));
-    screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)), audience: null, tone: null })));
+    screen.querySelectorAll("[data-item], [data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === (button.dataset.item || button.dataset.searchItem)), audience: null, tone: null, privateApproach: "empathy" })));
     screen.querySelectorAll("[data-adjust]").forEach(button => button.addEventListener("click", () => navigate("settings")));
     screen.querySelectorAll("[data-set-audience]").forEach(button => button.addEventListener("click", () => { state.audience = button.dataset.setAudience; render(); }));
     screen.querySelectorAll("[data-set-tone]").forEach(button => button.addEventListener("click", () => { state.tone = button.dataset.setTone; render(); }));
+    screen.querySelectorAll("[data-private-approach]").forEach(button => button.addEventListener("click", () => { state.privateApproach = button.dataset.privateApproach; render(); }));
     screen.querySelectorAll("[data-apply-settings]").forEach(button => button.addEventListener("click", () => navigate("result")));
     screen.querySelectorAll("[data-audience]").forEach(button => button.addEventListener("click", () => navigate("tone", { audience: button.dataset.audience })));
     screen.querySelectorAll("[data-tone]").forEach(button => button.addEventListener("click", () => navigate("result", { tone: button.dataset.tone })));
@@ -482,7 +490,7 @@
       const matches = q ? DATA.items.filter(item => item.honest.toLowerCase().includes(q) || (DATA.categories.find(c => c.id === item.category) || {}).label.includes(q)) : DATA.items;
       const results = document.getElementById("searchResults");
       results.innerHTML = renderSearchResults(matches, q);
-      results.querySelectorAll("[data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === button.dataset.searchItem), audience: null, tone: null })));
+      results.querySelectorAll("[data-search-item]").forEach(button => button.addEventListener("click", () => navigate("audience", { item: DATA.items.find(item => item.id === button.dataset.searchItem), audience: null, tone: null, privateApproach: "empathy" })));
     });
   }
 
