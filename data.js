@@ -14,13 +14,13 @@
   };
 
   const audiences = {
-    boss: { label: "上司", suffix: "ご検討いただけると助かります。" },
-    report: { label: "部下", suffix: "難しい点があれば早めに相談してください。" },
-    colleague: { label: "同僚", suffix: "お互い進めやすい形にできるとうれしいです。" },
-    client: { label: "取引先", suffix: "ご理解いただけますと幸いです。" },
-    friend: { label: "友達", suffix: "分かってもらえたらうれしい。" },
-    family: { label: "家族", suffix: "一緒に気持ちよく過ごせるようにしたい。" },
-    partner: { label: "恋人", suffix: "これからも大事にしたいから、伝えておきたい。" }
+    boss: { label: "上司", style: "upward", frames: ["お忙しいところ恐れ入りますが、", "進め方の相談なのですが、", "ご判断をいただきたいのですが、"] },
+    report: { label: "部下", style: "downward", frames: ["進め方をそろえたいので、", "次に進みやすくするため、", "困る前に確認しておきたいのですが、"] },
+    colleague: { label: "同僚", style: "peer", frames: ["相談なのですが、", "一緒に進めやすくしたいので、", "念のため確認なのですが、"] },
+    client: { label: "取引先", style: "upward", frames: ["恐れ入りますが、", "円滑に進めるため、", "ご相談がありまして、"] },
+    friend: { label: "友達", style: "casual", frames: ["ちょっと相談なんだけど、", "無理のない範囲でいいんだけど、", "先に気持ちを言うと、"] },
+    family: { label: "家族", style: "casual", frames: ["ちょっとお願いなんだけど、", "気持ちよく過ごしたいから、", "先に伝えておくね、"] },
+    partner: { label: "恋人", style: "casual", frames: ["大事なことだから聞いてほしいんだけど、", "ふたりで気持ちよく過ごしたいから、", "責めたいわけじゃないんだけど、"] }
   };
 
   const categories = [
