@@ -91,6 +91,7 @@ h3 { margin: 0; font-size: 17px; }
 .followup-card { padding: 16px; background: var(--surface-strong); border: 1px solid rgba(66,102,90,.2); border-radius: 16px; }
 .followup-card small { display: block; margin-bottom: 7px; color: var(--accent-dark); font-weight: 800; }
 .followup-card p { margin: 0 0 14px; font-size: 16px; line-height: 1.7; }
+.followup-card .counter-line { margin-bottom: 9px; padding: 8px 10px; color: #5f5b55; font-size: 14px; line-height: 1.5; background: rgba(255,255,255,.68); border-radius: 10px; }
 .result-card { position: relative; padding: 18px; cursor: default; box-shadow: var(--shadow); }
 .result-card p { margin: 0 42px 16px 0; font-size: 18px; line-height: 1.72; }
 .favorite-button { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; color: var(--muted); background: transparent; border: 0; border-radius: 50%; font-size: 25px; cursor: pointer; }
