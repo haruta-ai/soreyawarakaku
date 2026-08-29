@@ -263,9 +263,29 @@
     return (BUSINESS_FRAMES[audience.style] || audience.frames)[index] || "";
   }
 
+  function privateFrame(audienceId, category, index, toneId) {
+    const emotional = ["home", "anger", "caution", "object"].includes(category);
+    const frames = {
+      family: emotional
+        ? ["家のことだから、", "お互い気持ちよくいたいから、", "先に言っておくね、"]
+        : ["今ちょっと話したいんだけど、", "気持ちだけ聞いてほしいんだけど、", "先に言っておくね、"],
+      partner: emotional
+        ? ["大事なことだから、", "ふたりで気持ちよくいたいから、", "責めたいわけじゃないんだけど、"]
+        : ["ちゃんと伝えておきたいんだけど、", "無理をしたくないから、", "先に言っておくね、"],
+      friend: ["正直に言うと、", "ちょっと相談なんだけど、", "先に言っておくね、"]
+    };
+    if (toneId === "firm") {
+      const firm = { family: ["はっきり言うと、", "ここは大事だから、", "先に言っておくね、"], partner: ["はっきり伝えると、", "ここは大事だから、", "先に言っておくね、"], friend: ["率直に言うと、", "ここは大事だから、", "先に言っておくね、"] };
+      return firm[audienceId][index];
+    }
+    return frames[audienceId][index];
+  }
+
   function getResults(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
-    if (audience.style === "casual" && CASUAL_RESULTS[item.id]) return CASUAL_RESULTS[item.id];
+    if (audience.style === "casual" && CASUAL_RESULTS[item.id]) {
+      return CASUAL_RESULTS[item.id].map((text, index) => `${privateFrame(audienceId, item.category, index, toneId)}${text}`);
+    }
     const raw = item.variants[sourceToneFor(audience, toneId)];
     return raw.map((text, index) => {
       const wording = audience.style === "casual" ? casualize(text) : audience.style === "downward" ? downwardize(text) : text;
