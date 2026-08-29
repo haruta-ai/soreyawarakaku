@@ -1,6 +1,6 @@
 /* オフライン用キャッシュ。ファイル更新時は CACHE_NAME の番号を上げます。 */
-const CACHE_NAME = "yawarakaku-v1.0.17";
-const APP_FILES = ["./", "./index.html", "./styles.css?v=1.0.17", "./data.js?v=1.0.17", "./app.js?v=1.0.17", "./manifest.webmanifest?v=1.0.17", "./icon-192.png", "./icon-512.png"];
+const CACHE_NAME = "yawarakaku-v1.0.18";
+const APP_FILES = ["./", "./index.html", "./styles.css?v=1.0.18", "./data.js?v=1.0.18", "./app.js?v=1.0.18", "./manifest.webmanifest?v=1.0.18", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
