@@ -119,14 +119,40 @@
     return `<p class="eyebrow">必要なときだけ調整</p><h1>相手と温度を変える</h1><p class="selection-summary">本音：「${escapeHtml(state.item.honest)}」</p><h2 class="setting-title">誰に伝える？</h2><div class="chip-grid">${Object.entries(DATA.audiences).map(([id, audience]) => `<button class="chip ${state.audience === id ? "is-selected" : ""}" type="button" data-set-audience="${id}" aria-pressed="${state.audience === id}">${escapeHtml(audience.label)}</button>`).join("")}</div><h2 class="setting-title">どんな温度で？</h2><div class="chip-grid">${Object.entries(DATA.tones).map(([id, tone]) => `<button class="chip ${state.tone === id ? "is-selected" : ""}" type="button" data-set-tone="${id}" aria-pressed="${state.tone === id}">${escapeHtml(tone.label)}</button>`).join("")}</div><button class="primary-button" type="button" data-apply-settings>この条件で3案を見る</button>`;
   }
 
+  function sourceToneFor(audience, toneId) {
+    if (audience.style === "upward") {
+      if (toneId === "firm") return "polite";
+      if (toneId === "humor") return "soft";
+    }
+    if (audience.style === "casual" && toneId === "polite") return "soft";
+    return toneId;
+  }
+
+  function casualize(text) {
+    return text
+      .replaceAll("いただけますでしょうか", "もらえる？")
+      .replaceAll("いただけますか", "もらえる？")
+      .replaceAll("いただけると助かります", "もらえると助かる")
+      .replaceAll("お願いいたします", "お願い")
+      .replaceAll("お願いします", "お願い")
+      .replaceAll("申し訳ございません", "ごめん")
+      .replaceAll("申し訳ありません", "ごめん")
+      .replaceAll("ください。", "してね。")
+      .replaceAll("ください", "してね")
+      .replaceAll("でしょうか。", "？")
+      .replaceAll("でしょうか", "？")
+      .replaceAll("ますか。", "？")
+      .replaceAll("ますか", "？")
+      .replaceAll("ます。", "よ。")
+      .replaceAll("です。", "だよ。");
+  }
+
   function getResults(item, audienceId, toneId) {
-    const raw = item.variants[toneId];
-    const tone = DATA.tones[toneId];
     const audience = DATA.audiences[audienceId];
+    const raw = item.variants[sourceToneFor(audience, toneId)];
     return raw.map((text, index) => {
-      let result = text.replace("{lead}", tone.lead[index]).replace("{suffix}", audience.suffix);
-      if ((audienceId === "client" || audienceId === "boss") && toneId === "soft" && index === 2) result += ` ${audience.suffix}`;
-      return result;
+      const wording = audience.style === "casual" ? casualize(text) : text;
+      return `${audience.frames[index]}${wording}`;
     });
   }
 
