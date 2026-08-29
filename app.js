@@ -254,64 +254,55 @@
     n3: ["こっちの希望も入れてほしい。", "お互いの条件を一つずつ整理したい。", "ここを受け入れてもらえたら、ほかは柔軟に考えるよ。"]
   };
 
-  // 同じ本音でも、ビジネス上の立場で会話の出発点を変える。
-  // 上司=判断を仰ぐ / 同僚=協力して決める / 部下=状況と次の行動を示す /
-  // 取引先=当方の条件として丁寧に伝える、という役割に固定する。
-  const BUSINESS_FRAMES = {
-    upward: ["ご相談なのですが、", "優先順位を確認したく、", "ご判断を仰ぎたく、"],
-    peer: ["相談なんだけど、", "一緒に進めやすくしたいから、", "認識を合わせたいので、"],
-    downward: ["状況を整理すると、", "次に進むために、", "期限に間に合わせるため、"],
-    external: ["恐れ入りますが、", "当方で確認したところ、", "円滑に進めるため、ご相談があり、"]
+  // 近しい相手には、敬語を外しただけの文を渡さない。話す目的そのものを
+  // 家族（暮らしを回す）・恋人（気持ちを守る）・友達（選択を尊重する）で分ける。
+  const PRIVATE_TAILS = {
+    family: {
+      soft: [" 家の中で気持ちよく過ごしたいんだ。", " 私も気をつけるから、次からどうするか一緒に決めたい。", " これからも無理なく回るやり方にしたい。"],
+      polite: [" 感情的にならずに、家のこととして相談したい。", " お互いに無理がない形を考えたい。", " 落ち着いて話せる時間をつくってほしい。"],
+      firm: [" ここは家の約束として守ってほしい。", " 私が抱え続ける形にはできない。", " これからは、はっきり決めておきたい。"],
+      distance: [" 今はこれ以上引き受けられない。", " しばらくは自分でできることを自分でしてほしい。", " 落ち着くまで、この線でお願い。"],
+      humor: [" 家の平和維持のためのお願いです。", " 小さな火種のうちに片づけよう。", " 笑って終われるうちに、次のやり方を決めよう。"]
+    },
+    partner: {
+      soft: [" あなたを責めたいんじゃなくて、私の気持ちも知ってほしい。", " ふたりで気持ちよくいたいから、どうしたらいいか話したい。", " ちゃんと仲良くやっていきたいから言ってる。"],
+      polite: [" 感情的になりたくないから、落ち着いて聞いてほしい。", " 私の気持ちとしては、ここを曖昧にしたくない。", " ふたりのために、次はどうするか決めたい。"],
+      firm: [" これが続くと私はつらい。", " 大事なことだから、ここは変えてほしい。", " この点だけは、これから守ってほしい。"],
+      distance: [" 今は少し自分の気持ちを守りたい。", " すぐに答えを出さなくていいから、いったん離れて考えたい。", " 落ち着くまで、この話はいったん置かせて。"],
+      humor: [" ふたりの平和会議として聞いてほしい。", " 笑い話にしたいけど、気持ちは本気なんだ。", " 笑って話せるうちに、約束を決めよう。"]
+    },
+    friend: {
+      soft: [" 嫌いになったとかじゃないよ。", " 無理なら全然大丈夫だから、気持ちだけ聞かせて。", " これからも普通に話せる関係でいたい。"],
+      polite: [" 友達だからこそ、ちゃんと伝えておきたい。", " お互い気楽でいられる形にしたい。", " 気まずくならないように、先に話しておきたかった。"],
+      firm: [" ここは私にとって大事な線なんだ。", " 友達として正直に伝えておきたい。", " この選び方は分かってほしい。"],
+      distance: [" 今は少し距離を取りたい。", " 無理に分かり合おうとはしないけど、今はこの距離感でいたい。", " しばらくは、こちらから連絡するまで待ってほしい。"],
+      humor: [" 友情の議事録に一行だけ足させて。", " 笑い話にしたいけど、そこだけは本気。", " 次も笑って会えるように、ここは決めておこう。"]
+    }
   };
 
-  function businessFrame(audience, index) {
-    return (BUSINESS_FRAMES[audience.style] || audience.frames)[index] || "";
+  function privateStatement(audienceId, item, toneId, index, approach) {
+    const casualBase = CASUAL_RESULTS[item.id] || item.variants.soft.map(casualize);
+    // 近しい相手用の本文は、仕事向け原文を変換しない。温度は後半の
+    // 要望の強さ・距離・冗談の量で変え、家族・恋人・友達の口調を保つ。
+    const base = casualBase[index];
+    const tail = (PRIVATE_TAILS[audienceId][toneId] || PRIVATE_TAILS[audienceId].soft)[index];
+    const solveTail = approach === "solve" && ["caution", "anger", "home", "work", "reschedule"].includes(item.category)
+      ? [" 次から困らないやり方を一緒に決めたい。", " どうすれば続けられるか、話して決めよう。", "責め合うためじゃなく、次の約束にしたい。"][index]
+      : tail;
+    return `${base}${solveTail}`;
   }
 
-  function privateFrame(audienceId, category, index, toneId, approach) {
-    const emotional = ["home", "anger", "caution", "object"].includes(category);
-    const frames = {
-      family: emotional
-        ? ["うちでは、", "お互い気持ちよくいたいから、", "先に伝えておくね、"]
-        : ["今ちょっと話したいんだけど、", "気持ちだけ聞いてほしいんだけど、", "先に言っておくね、"],
-      partner: emotional
-        ? ["聞いてほしいんだけど、", "ふたりで気持ちよくいたいから、", "責めたいわけじゃないんだけど、"]
-        : ["ちゃんと伝えておきたいんだけど、", "無理をしたくないから、", "先に言っておくね、"],
-      friend: ["正直に言うと、", "ちょっと相談なんだけど、", "先に言っておくね、"]
-    };
-    if (toneId === "distance") {
-      const distance = { family: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"], partner: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"], friend: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"] };
-      return distance[audienceId][index];
-    }
-    if (toneId === "humor") {
-      const humor = { family: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"], partner: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"], friend: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"] };
-      return humor[audienceId][index];
-    }
-    if (toneId === "polite") {
-      const calm = { family: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"], partner: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"], friend: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"] };
-      return calm[audienceId][index];
-    }
-    if (approach === "solve") {
-      const solve = { family: ["今のことを整理したいんだけど、", "次どうするか決めたいから、", "先に言っておくね、"], partner: ["落ち着いて話したいんだけど、", "ふたりでどうするか決めたいから、", "先に言っておくね、"], friend: ["一緒に考えたいんだけど、", "どうするか相談したくて、", "先に言っておくね、"] };
-      return solve[audienceId][index];
-    }
-    if (toneId === "firm") {
-      const firm = { family: ["はっきり言うと、", "ここは大事だから、", "私としては、"], partner: ["はっきり伝えると、", "ここは大事だから、", "私としては、"], friend: ["率直に言うと、", "ここは大事だから、", "私としては、"] };
-      return firm[audienceId][index];
-    }
-    return frames[audienceId][index];
+  function businessStatement(audience, item, toneId, index) {
+    const raw = item.variants[sourceToneFor(audience, toneId)][index];
+    const wording = audience.style === "downward" ? downwardize(raw) : raw;
+    const roles = { upward: ["ご判断をいただきたく、", "優先順位を確認したく、", "進め方をご相談したく、"], peer: ["一緒に進めやすくしたいので、", "認識をそろえたいので、", "役割を明確にしたいので、"], downward: ["状況を確認したうえで、", "次に進めるように、", "期待する進め方として、"], external: ["双方にとって進めやすい形にするため、", "条件を明確にするため、", "行き違いを避けるため、"] };
+    return `${roles[audience.style][index]}${wording}`;
   }
 
   function getResults(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
-    if (audience.style === "casual" && CASUAL_RESULTS[item.id]) {
-      return CASUAL_RESULTS[item.id].map((text, index) => `${privateFrame(audienceId, item.category, index, toneId, state.privateApproach)}${text}`);
-    }
-    const raw = item.variants[sourceToneFor(audience, toneId)];
-    return raw.map((text, index) => {
-      const wording = audience.style === "casual" ? casualize(text) : audience.style === "downward" ? downwardize(text) : text;
-      return `${businessFrame(audience, index)}${wording}`;
-    });
+    if (audience.style === "casual") return [0, 1, 2].map(index => privateStatement(audienceId, item, toneId, index, state.privateApproach));
+    return [0, 1, 2].map(index => businessStatement(audience, item, toneId, index));
   }
 
   const FOLLOW_UPS = {
@@ -414,13 +405,68 @@
     return closings[audience.style];
   }
 
+  const PRIVATE_PUSHBACKS = {
+    family: {
+      default: "そんなつもりじゃなかったよ",
+      caution: "いちいち言わなくてもいいでしょ",
+      anger: "そこまで怒らなくてもいいでしょ",
+      home: "あとでやろうと思ってた",
+      invitation: "せっかく誘ってるのに",
+      decline: "今回だけでいいから"
+    },
+    partner: {
+      default: "そんなつもりで言ったわけじゃないよ",
+      caution: "責められているように感じる",
+      anger: "そんなに悪く言わなくてもいいでしょ",
+      home: "今はその話をしたくない",
+      invitation: "一緒に来てくれたらうれしいのに",
+      decline: "少しだけでも何とかならない？"
+    },
+    friend: {
+      default: "気にしすぎじゃない？",
+      caution: "そんなつもりじゃなかった",
+      anger: "急にどうしたの？",
+      invitation: "たまには来なよ",
+      decline: "今回だけお願いできない？"
+    }
+  };
+
+  function privateFollowUps(item, audienceId, toneId, approach) {
+    const pushback = PRIVATE_PUSHBACKS[audienceId][item.category] || PRIVATE_PUSHBACKS[audienceId].default;
+    const tone = toneId === "firm" || toneId === "distance" ? "boundary" : approach === "solve" ? "solve" : "empathy";
+    const replies = {
+      family: {
+        empathy: ["そう思ったならごめん。でも、私は困っているから、そこは分かってほしい。", "言い合いにしたいわけじゃないよ。家で気持ちよく過ごせるやり方を一緒に決めよう。"],
+        solve: ["責めるより、次に同じことで困らないやり方を決めたい。どうしたらできそう？", "完璧じゃなくていいから、続けられる約束にしよう。"],
+        boundary: ["気持ちは聞いたよ。でも私はこのまま引き受け続けられない。", "今はこれ以上こじらせたくないから、落ち着いたらまた話そう。"]
+      },
+      partner: {
+        empathy: ["そう聞こえたならごめん。でも責めるためじゃなくて、私の気持ちを知ってほしかった。", "勝ち負けにしたいんじゃない。ふたりが楽でいられる形を一緒に見つけたい。"],
+        solve: ["誰が悪いかより、次に同じことが起きないようにしたい。どうしたらふたりとも納得できる？", "今すぐ結論を出さなくていいから、また落ち着いて話そう。"],
+        boundary: ["あなたの気持ちは分かった。でも私が我慢し続ける形には戻したくない。", "大事にしたい関係だからこそ、今日はここでいったん区切らせて。"]
+      },
+      friend: {
+        empathy: ["そう感じさせたならごめん。でも、私はこう受け取ったんだ。", "気まずくしたいわけじゃないよ。これからも普通に話せる関係でいたい。"],
+        solve: ["無理に同じ意見にならなくていいから、次どうするかだけ決めよう。", "お互い楽な形にできたらうれしい。また落ち着いて話そう。"],
+        boundary: ["そう思うのは分かった。でも私は今回はこの選び方にするね。", "意見が違っても、相手を悪く言わずに終わらせたい。今日はここまでにしよう。"]
+      }
+    };
+    return [
+      { label: "相手がこう返したら", prompt: `「${pushback}」`, reply: replies[audienceId][tone][0] },
+      { label: "最後はこう締める", prompt: "関係を残して会話を閉じる", reply: replies[audienceId][tone][1] }
+    ];
+  }
+
   function getFollowUps(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
+    if (audience.style === "casual") return privateFollowUps(item, audienceId, toneId, state.privateApproach);
     const lines = audience.style === "casual" ? CASUAL_FOLLOW_UPS[item.category] || CASUAL_FOLLOW_UPS.request : audience.style === "downward" ? DOWNWARD_FOLLOW_UPS[item.category] || DOWNWARD_FOLLOW_UPS.request : FOLLOW_UPS[item.category] || FOLLOW_UPS.request;
-    return lines.map((line, index) => {
-      if (index === 1) return relationshipClosing(audience);
-      return `${followUpPrefix(audience, toneId, index)}${line}`;
-    });
+    const objections = { upward: "「難しいです」と言われたら", peer: "「そこまで必要？」と言われたら", downward: "「分かりました」と返ってきたら", external: "「現状では難しいです」と言われたら" };
+    return lines.map((line, index) => ({
+      label: index === 0 ? "相手がこう返したら" : "最後はこう締める",
+      prompt: index === 0 ? objections[audience.style] : "次の行動を確認して終える",
+      reply: index === 1 ? relationshipClosing(audience) : `${followUpPrefix(audience, toneId, index)}${line}`
+    }));
   }
 
   function renderResult() {
@@ -436,9 +482,8 @@
     return `<article class="result-card"><small>案 ${index + 1}</small><p>${escapeHtml(text)}</p><button class="favorite-button" type="button" data-favorite="${index}" aria-label="お気に入り${active ? "から削除" : "に追加"}" aria-pressed="${active}">${active ? "♥" : "♡"}</button><button class="copy-button" type="button" data-copy="${index}">この言い方をコピー</button></article>`;
   }
 
-  function followUpCard(text, index) {
-    const title = index === 0 ? "2つ目の返し" : "3つ目の返し";
-    return `<article class="followup-card"><small>${title}</small><p>${escapeHtml(text)}</p><button class="copy-button" type="button" data-copy-followup="${index}">この返しをコピー</button></article>`;
+  function followUpCard(turn, index) {
+    return `<article class="followup-card"><small>${escapeHtml(turn.label)}</small><p class="counter-line">${escapeHtml(turn.prompt)}</p><p>${escapeHtml(turn.reply)}</p><button class="copy-button" type="button" data-copy-followup="${index}">この返しをコピー</button></article>`;
   }
 
   function renderSearch() {
@@ -504,7 +549,7 @@
     screen.querySelectorAll("[data-audience]").forEach(button => button.addEventListener("click", () => navigate("tone", { audience: button.dataset.audience })));
     screen.querySelectorAll("[data-tone]").forEach(button => button.addEventListener("click", () => navigate("result", { tone: button.dataset.tone })));
     screen.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", () => copyText(getResults(state.item, state.audience, state.tone)[Number(button.dataset.copy)])));
-    screen.querySelectorAll("[data-copy-followup]").forEach(button => button.addEventListener("click", () => copyText(getFollowUps(state.item, state.audience, state.tone)[Number(button.dataset.copyFollowup)])));
+    screen.querySelectorAll("[data-copy-followup]").forEach(button => button.addEventListener("click", () => copyText(getFollowUps(state.item, state.audience, state.tone)[Number(button.dataset.copyFollowup)].reply)));
     screen.querySelectorAll("[data-favorite]").forEach(button => button.addEventListener("click", () => toggleFavorite(getResults(state.item, state.audience, state.tone)[Number(button.dataset.favorite)], button)));
     screen.querySelectorAll("[data-copy-saved]").forEach(button => button.addEventListener("click", () => { const item = [...state.saved.favorites, ...state.saved.history].find(entry => entry.key === button.dataset.copySaved); if (item) copyText(item.text); }));
     screen.querySelectorAll("[data-remove-favorite]").forEach(button => button.addEventListener("click", () => { state.saved.favorites = state.saved.favorites.filter(item => item.key !== button.dataset.removeFavorite); save(); render(); showToast("お気に入りから外しました"); }));
