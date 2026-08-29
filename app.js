@@ -396,10 +396,22 @@
     return prefixes[audience.style][toneId][level];
   }
 
+  function relationshipClosing(audience) {
+    const closings = {
+      upward: "お互いに進めやすい形を、改めて相談できればと思います。",
+      external: "双方にとって進めやすい形を、改めてご相談できれば幸いです。",
+      downward: "無理のない形で進められるよう、困った時は早めに相談してください。",
+      peer: "言い合いたいわけではないので、無理のない形を一緒に決められると助かります。",
+      casual: "言い合いたいわけじゃないから、これからも気持ちよくやれる形を一緒に考えたい。"
+    };
+    return closings[audience.style];
+  }
+
   function getFollowUps(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
     const lines = audience.style === "casual" ? CASUAL_FOLLOW_UPS[item.category] || CASUAL_FOLLOW_UPS.request : audience.style === "downward" ? DOWNWARD_FOLLOW_UPS[item.category] || DOWNWARD_FOLLOW_UPS.request : FOLLOW_UPS[item.category] || FOLLOW_UPS.request;
     return lines.map((line, index) => {
+      if (index === 1) return relationshipClosing(audience);
       return `${followUpPrefix(audience, toneId, index)}${line}`;
     });
   }
