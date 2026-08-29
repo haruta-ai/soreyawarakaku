@@ -152,20 +152,38 @@
 
   function casualize(text) {
     return downwardize(text)
+      // 家族・友人には敬語の「変換結果」を見せない。ここでは丁寧語を
+      // 単に語尾だけ削るのではなく、日常会話で使う言い方へ寄せる。
+      .replaceAll("恐れ入りますが、", "")
+      .replaceAll("お手数ですが、", "")
+      .replaceAll("恐縮ですが、", "")
+      .replaceAll("差し支えなければ、", "できれば、")
+      .replaceAll("可能であれば、", "できれば、")
+      .replaceAll("いかがでしょうか。", "どう？")
+      .replaceAll("いかがでしょうか", "どう？")
+      .replaceAll("可能でしょうか。", "できそう？")
+      .replaceAll("可能でしょうか", "できそう？")
       .replaceAll("いただけますでしょうか", "もらえる？")
       .replaceAll("いただけますか", "もらえる？")
       .replaceAll("いただけると助かります", "もらえると助かる")
+      .replaceAll("してもらえますか", "してもらえる？")
+      .replaceAll("教えてもらえますか", "教えてもらえる？")
+      .replaceAll("できますか", "できる？")
       .replaceAll("お願いいたします", "お願い")
-      .replaceAll("お願いします", "お願い")
+      .replaceAll("お願いします", "お願いね")
       .replaceAll("申し訳ございません", "ごめん")
       .replaceAll("申し訳ありません", "ごめん")
+      .replaceAll("すみません", "ごめん")
       .replaceAll("見送らせてください。", "見送るね。")
       .replaceAll("お引き受けできません。", "引き受けられないんだ。")
       .replaceAll("対応いたしかねます。", "今回は難しいんだ。")
       .replaceAll("お受けすることが難しいです。", "引き受けるのは難しいんだ。")
+      .replaceAll("させてください。", "させてほしい。")
       .replaceAll("お待ちください。", "待ってね。")
       .replaceAll("してください。", "してね。")
       .replaceAll("してください", "してね")
+      .replaceAll("ください。", "ね。")
+      .replaceAll("ください", "ね")
       .replaceAll("でしょうか。", "？")
       .replaceAll("でしょうか", "？")
       .replaceAll("ますか。", "？")
@@ -174,18 +192,84 @@
       .replaceAll("できません", "できない")
       .replaceAll("できると", "できるなら")
       .replaceAll("難しいです。", "難しいんだ。")
+      .replaceAll("ほしいです。", "ほしいんだ。")
+      .replaceAll("うれしいです。", "うれしいんだ。")
+      .replaceAll("大切です。", "大切なんだ。")
       .replaceAll("大丈夫です。", "大丈夫だよ。")
       .replaceAll("必要です。", "必要だよ。")
       .replaceAll("ありません。", "ないんだ。")
+      .replaceAll("ございます。", "あるよ。")
+      .replaceAll("いたします。", "するね。")
+      .replaceAll("します。", "するね。")
+      .replaceAll("です。", "だよ。")
       .replaceAll("申し上げます", "伝えるね");
+  }
+
+  // 家族・恋人・友人にだけ使う、最初から日常会話として書いた文章。
+  // ビジネス文を敬語だけ外す方式では、自然な会話にならないため分けている。
+  const CASUAL_RESULTS = {
+    d1: ["今回は無理なんだ。", "今は引き受けられないよ。", "今回は見送らせて。"],
+    d2: ["そのやり方だと、私にはできないんだ。", "別の方法なら考えられるよ。", "今回はその希望には応えられない。"],
+    d3: ["今ちょっと手が回ってないんだ。少し待ってもらえる？", "少し時間があればできそう。", "何を優先するか、一緒に決めたい。"],
+    r1: ["今どんな感じ？", "進み具合だけ教えて。", "いつ頃になりそうか分かる？"],
+    r2: ["できれば少し急いでもらえる？", "これ、先にやってもらえると助かる。", "いつ頃できそうか教えて。"],
+    r3: ["見たら一言返してほしい。", "受け取ったって分かると安心する。", "時間あるときでいいから返事ちょうだい。"],
+    c1: ["前にも話したことだから、もう一度気をつけてほしい。", "同じことが続くと困るんだ。", "次からどうするか一緒に決めたい。"],
+    c2: ["一度ちゃんと見直してから進めてほしい。", "全体をもう一回確認してもらえる？", "次は確認してから出してね。"],
+    c3: ["進める前に一度話してほしい。", "次からは先に教えてね。", "大事なところは一緒に確認してから決めたい。"],
+    o1: ["ごめん、ちょっと意味が分からなかった。もう少し教えて？", "具体的に言ってもらえると分かりやすい。", "どういうつもりか聞かせて。"],
+    o2: ["私は少し違うと思ってる。", "別の見方もあるんじゃないかな。", "そこは私の考えと違うんだ。"],
+    o3: ["そのやり方、私はちょっと心配。", "別の進め方のほうがよさそう。", "一回やり方を見直したい。"],
+    a1: ["忘れてた。ごめん、すぐやるね。", "確認が抜けてた。本当にごめん。", "私のミスだね。今から直す。"],
+    a2: ["遅くなってごめん。今からやるね。", "待たせちゃったね。ごめん。", "予定より遅れちゃった。ちゃんと対応する。"],
+    a3: ["嫌な思いをさせたならごめん。", "迷惑をかけたことは分かってる。ごめん。", "説明が足りなかったね。ごめん。"],
+    q1: ["これ、お願いしてもいい？", "手が空いたときにやってもらえる？", "できそうなら、この件お願いしたい。"],
+    q2: ["少し手伝ってもらえる？", "一人だと大変で、力を貸してほしい。", "この部分だけ一緒にやってほしい。"],
+    q3: ["分かる範囲で予定を教えて。", "空いてる時間をいくつか教えてほしい。", "これからの予定、分かったら共有して。"],
+    g1: ["今の言い方、ちょっと傷ついた。", "もう少しやわらかく言ってほしい。", "その言葉は、私は気持ちよく受け取れなかった。"],
+    g2: ["同じことが続いてて、正直困ってる。", "これ以上続くとつらいから、変えてほしい。", "そろそろやり方を見直してほしい。"],
+    g3: ["今の説明だけじゃ、まだ納得できない。", "もう少し理由を教えてほしい。", "どうしてそうなったのか聞きたい。"],
+    s1: ["予定、変えてもらえる？", "別の日にできると助かる。", "日程をもう一回相談したい。"],
+    s2: ["ごめん、今日は行けなくなっちゃった。", "急で悪いんだけど、今日は無理そう。", "別の日にしてもらえる？"],
+    s3: ["少し遅れそう。ごめん。", "着くのが少し遅くなる。分かったらまた連絡するね。", "先に始めてて。あとで追いつくね。"],
+    i1: ["今回は行かないでおこうかな。", "誘ってくれてうれしいけど、今回はやめておくね。", "今はあまり行く気分じゃないんだ。"],
+    i2: ["今回はちょっと気が乗らないから、やめておく。", "今は参加する余裕がなさそう。", "また別のときに誘って。"],
+    i3: ["その日は自分の時間にしたいんだ。", "予定はないけど、今回はゆっくりしたい。", "今回は行かないでおくね。"],
+    l1: ["返事忘れてた。ごめん。", "返したつもりになってた。遅くなってごめん。", "待たせちゃったね。今から返す。"],
+    l2: ["どう返すか迷ってて、遅くなった。ごめん。", "少し考える時間がほしかった。", "すぐ返せなくてごめん。"],
+    l3: ["遅くなったけど、今から返してもいい？", "時間が空いちゃってごめん。", "今さらだけど、気になってたから連絡した。"],
+    w1: ["これ、そっちの担当だと思ってたんだけど、違う？", "誰がやるか、一回確認したい。", "役割分担だと、そっちの範囲だったと思う。"],
+    w2: ["何を目指すか、もう少し教えてほしい。", "どう進めるか整理してから頼んでほしい。", "判断に必要なことも一緒に教えて。"],
+    w3: ["その締切だと、ちゃんと仕上げるのは難しい。", "期限か量を調整できない？", "無理のない日程を一緒に決めたい。"],
+    h1: ["使ったもの、元に戻してね。", "あとで一緒に片づけよう。", "気づいたときに片づけてもらえるとうれしい。"],
+    h2: ["今、少しだけ話を聞いてほしい。", "解決しなくていいから、まず聞いて。", "大事な話だから、時間をつくってほしい。"],
+    h3: ["今は一人で落ち着きたい。", "今は話す余裕がないから、少し待って。", "気持ちが落ち着いたら、こっちから話すね。"],
+    n1: ["もう少し安くできないかな。", "条件を変えて、少し抑えられない？", "続けるつもりだから、値段を相談したい。"],
+    n2: ["その条件のままだと、引き受けるのは難しい。", "何を優先するか相談したい。", "お互い進めやすい条件を考え直したい。"],
+    n3: ["こっちの希望も入れてほしい。", "お互いの条件を一つずつ整理したい。", "ここを受け入れてもらえたら、ほかは柔軟に考えるよ。"]
+  };
+
+  // 同じ本音でも、ビジネス上の立場で会話の出発点を変える。
+  // 上司=判断を仰ぐ / 同僚=協力して決める / 部下=状況と次の行動を示す /
+  // 取引先=当方の条件として丁寧に伝える、という役割に固定する。
+  const BUSINESS_FRAMES = {
+    upward: ["ご相談なのですが、", "優先順位を確認したく、", "ご判断を仰ぎたく、"],
+    peer: ["相談なんだけど、", "一緒に進めやすくしたいから、", "認識を合わせたいので、"],
+    downward: ["状況を整理すると、", "次に進むために、", "期限に間に合わせるため、"],
+    external: ["恐れ入りますが、", "当方で確認したところ、", "円滑に進めるため、ご相談があり、"]
+  };
+
+  function businessFrame(audience, index) {
+    return (BUSINESS_FRAMES[audience.style] || audience.frames)[index] || "";
   }
 
   function getResults(item, audienceId, toneId) {
     const audience = DATA.audiences[audienceId];
+    if (audience.style === "casual" && CASUAL_RESULTS[item.id]) return CASUAL_RESULTS[item.id];
     const raw = item.variants[sourceToneFor(audience, toneId)];
     return raw.map((text, index) => {
       const wording = audience.style === "casual" ? casualize(text) : audience.style === "downward" ? downwardize(text) : text;
-      return `${audience.frames[index]}${wording}`;
+      return `${businessFrame(audience, index)}${wording}`;
     });
   }
 
@@ -394,7 +478,7 @@
   }
 
   function goBack() {
-    const previous = { category: "home", settings: "result", result: "category" };
+    const previous = { category: "home", audience: "category", tone: "audience", result: "tone", settings: "result" };
     navigate(previous[state.view] || "home");
   }
 
@@ -414,6 +498,20 @@
   document.getElementById("showIntroButton").addEventListener("click", () => { closeDialog(menuDialog); showDialog(introDialog); });
   document.getElementById("clearDataButton").addEventListener("click", () => { if (!window.confirm("お気に入りと履歴をすべて消しますか？")) return; state.saved = { favorites: [], history: [], introSeen: true }; save(); closeDialog(menuDialog); navigate("home"); showToast("保存データを消去しました"); });
   bottomNav.addEventListener("click", event => { const button = event.target.closest("button[data-nav]"); if (button) navigate(button.dataset.nav); });
+  let swipeStart = null;
+  screen.addEventListener("touchstart", event => {
+    const touch = event.changedTouches[0];
+    if (!touch || touch.clientX > 32 || event.target.closest("input, textarea, select")) return;
+    swipeStart = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+  screen.addEventListener("touchend", event => {
+    if (!swipeStart) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - swipeStart.x;
+    const dy = Math.abs(touch.clientY - swipeStart.y);
+    swipeStart = null;
+    if (dx >= 72 && dy <= 48 && !["home", "search", "favorites", "history"].includes(state.view)) goBack();
+  }, { passive: true });
   window.addEventListener("beforeinstallprompt", event => { event.preventDefault(); deferredInstallPrompt = event; installButton.hidden = false; });
   installButton.addEventListener("click", async () => { if (!deferredInstallPrompt) return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt = null; installButton.hidden = true; });
 
