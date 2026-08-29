@@ -133,12 +133,7 @@
   }
 
   function sourceToneFor(audience, toneId) {
-    if (audience.style === "upward" || audience.style === "external") {
-      if (toneId === "firm") return "polite";
-      if (toneId === "humor") return "soft";
-    }
-    if (audience.style === "downward" && toneId === "polite") return "soft";
-    if (audience.style === "casual" && toneId === "polite") return "soft";
+    // 選んだ温度感を別の温度へ丸めない。表示する5種類は必ず別の表現にする。
     return toneId;
   }
 
@@ -284,12 +279,24 @@
         : ["ちゃんと伝えておきたいんだけど、", "無理をしたくないから、", "先に言っておくね、"],
       friend: ["正直に言うと、", "ちょっと相談なんだけど、", "先に言っておくね、"]
     };
+    if (toneId === "distance") {
+      const distance = { family: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"], partner: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"], friend: ["今は少し距離を置きたいから、", "これからのために言うと、", "今後は、"] };
+      return distance[audienceId][index];
+    }
+    if (toneId === "humor") {
+      const humor = { family: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"], partner: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"], friend: ["重く言いたくないんだけど、", "笑って済ませたいけど、", "冗談はさておき、"] };
+      return humor[audienceId][index];
+    }
+    if (toneId === "polite") {
+      const calm = { family: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"], partner: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"], friend: ["落ち着いて伝えると、", "気持ちを整理すると、", "もう一つだけ伝えると、"] };
+      return calm[audienceId][index];
+    }
     if (approach === "solve") {
       const solve = { family: ["今のことを整理したいんだけど、", "次どうするか決めたいから、", "先に言っておくね、"], partner: ["落ち着いて話したいんだけど、", "ふたりでどうするか決めたいから、", "先に言っておくね、"], friend: ["一緒に考えたいんだけど、", "どうするか相談したくて、", "先に言っておくね、"] };
       return solve[audienceId][index];
     }
     if (toneId === "firm") {
-      const firm = { family: ["はっきり言うと、", "ここは大事だから、", "先に言っておくね、"], partner: ["はっきり伝えると、", "ここは大事だから、", "先に言っておくね、"], friend: ["率直に言うと、", "ここは大事だから、", "先に言っておくね、"] };
+      const firm = { family: ["はっきり言うと、", "ここは大事だから、", "私としては、"], partner: ["はっきり伝えると、", "ここは大事だから、", "私としては、"], friend: ["率直に言うと、", "ここは大事だから、", "私としては、"] };
       return firm[audienceId][index];
     }
     return frames[audienceId][index];
